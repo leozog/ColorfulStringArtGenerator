@@ -1,5 +1,6 @@
 #include "img.h"
 #include "line.h"
+#include "thread_pool.h"
 
 #include <cmath>
 #include <iostream>
@@ -15,7 +16,7 @@ int main(int argc, char *argv[])
             if (std::string(argv[i]) == "-S")
             {
                 if (++i == argc)
-                    throw "arg error";
+                    throw "-S arg error";
                 pic_filename = std::string(argv[i]);
             }
         }
@@ -50,6 +51,24 @@ int main(int argc, char *argv[])
         }
 
         pic.save("test.png");
+
+        thread_pool tp;
+
+        std::vector<std::future<int>> futures;
+
+        for (int i = 0; i < 100; i++)
+        {
+            std::function<int(int)> f = [](int i)
+            { std::cout << "calculating: " << i << std::endl; return i; };
+            futures.push_back(tp.submit(
+                0, f,
+                i));
+        }
+
+        for (auto &f : futures)
+        {
+            std::cout << f.get() << std::endl;
+        }
     }
     catch (const char *err)
     {
