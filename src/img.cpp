@@ -60,11 +60,11 @@ img::img(std::string name) : arr(0, 0)
     int w, h, n;
     uint8_t *data = stbi_load(name.c_str(), &w, &h, &n, color::CHANNELS);
     arr = array2d<color>(w, h);
-    arr.for_each([data](color a, size_t i)
-                 { return color(data[color::CHANNELS * i + 0],
-                                data[color::CHANNELS * i + 1],
-                                data[color::CHANNELS * i + 2],
-                                data[color::CHANNELS * i + 3]); });
+    arr.for_each([data](color &a, size_t i)
+                 { a = color(data[color::CHANNELS * i + 0],
+                             data[color::CHANNELS * i + 1],
+                             data[color::CHANNELS * i + 2],
+                             data[color::CHANNELS * i + 3]); });
     stbi_image_free(data);
 }
 
@@ -75,9 +75,9 @@ void img::save(std::string name)
 {
     array2d<uint8_t> out_arr(arr.get_w() * color::CHANNELS, arr.get_h());
     arr.for_each(
-        [&out_arr](color a, size_t x, size_t y)
+        [&out_arr](color &a, size_t x, size_t y)
         {
-            a = a.clamp();
+            a.clamp();
             out_arr(x * color::CHANNELS + 0, y) = a.r * 255;
             out_arr(x * color::CHANNELS + 1, y) = a.g * 255;
             out_arr(x * color::CHANNELS + 2, y) = a.b * 255;

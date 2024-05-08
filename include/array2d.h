@@ -1,6 +1,7 @@
 #pragma once
 #include <array>
 #include <functional>
+#include <stdexcept>
 
 template <typename T>
 class array2d
@@ -16,10 +17,10 @@ public:
     array2d &operator=(const array2d &other);
     array2d &operator=(array2d &&other) noexcept;
     T &operator()(size_t x, size_t y);
-    void for_each(std::function<T(T &)> f);
-    void for_each(std::function<T(T &, size_t)> f);
-    void for_each(std::function<T(T &, size_t, size_t)> f);
     const T &operator()(size_t x, size_t y) const;
+    void for_each(std::function<void(T &)> f);
+    void for_each(std::function<void(T &, size_t)> f);
+    void for_each(std::function<void(T &, size_t, size_t)> f);
     void for_each(std::function<void(const T &)> f) const;
     void for_each(std::function<void(const T &, size_t)> f) const;
     void for_each(std::function<void(const T &, size_t, size_t)> f) const;
@@ -60,10 +61,12 @@ array2d<T> &array2d<T>::operator=(array2d &&other) noexcept
     return *this;
 }
 
-#ifdef _DEBUG
+#ifndef NDEBUG
 template <typename T>
 T &array2d<T>::operator()(size_t x, size_t y)
 {
+    if (!is_in(x, y))
+        throw std::out_of_range("array2d::operator()");
     return arr.at(x + y * w);
 }
 #else
@@ -74,10 +77,12 @@ T &array2d<T>::operator()(size_t x, size_t y)
 }
 #endif
 
-#ifdef _DEBUG
+#ifndef NDEBUG
 template <typename T>
 const T &array2d<T>::operator()(size_t x, size_t y) const
 {
+    if (!is_in(x, y))
+        throw std::out_of_range("array2d::operator()");
     return arr.at(x + y * w);
 }
 #else
@@ -89,26 +94,26 @@ const T &array2d<T>::operator()(size_t x, size_t y) const
 #endif
 
 template <typename T>
-void array2d<T>::for_each(std::function<T(T &)> f)
+void array2d<T>::for_each(std::function<void(T &)> f)
 {
     for (auto &a : arr)
-        a = f(a);
+        f(a);
 }
 
 template <typename T>
-void array2d<T>::for_each(std::function<T(T &, size_t)> f)
+void array2d<T>::for_each(std::function<void(T &, size_t)> f)
 {
     for (size_t i = 0; i < w * h; i++)
-        arr[i] = f(arr[i], i);
+        f(arr[i], i);
 }
 
 template <typename T>
-void array2d<T>::for_each(std::function<T(T &, size_t, size_t)> f)
+void array2d<T>::for_each(std::function<void(T &, size_t, size_t)> f)
 {
     for (size_t i = 0; i < h; i++)
     {
         for (size_t j = 0; j < w; j++)
-            arr[j + i * w] = f(arr[j + i * w], j, i);
+            f(arr[j + i * w], j, i);
     }
 }
 

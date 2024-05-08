@@ -10,8 +10,8 @@ struct color
     static constexpr uint8_t CHANNELS = 4;
     float r, g, b, a;
 
-    color(double r, double g, double b, double a = 1.0f);
     color(int r = 0, int g = 0, int b = 0, int a = 255);
+    color(double r, double g, double b, double a = 1.0f);
     color operator+(const color &x) const;
     color operator*(const double x) const;
     color &operator+=(const color &x);

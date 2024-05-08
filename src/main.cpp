@@ -1,5 +1,5 @@
 #include "img.h"
-#include "line_chen.h"
+#include "line.h"
 
 #include <cmath>
 #include <iostream>
@@ -35,27 +35,19 @@ int main(int argc, char *argv[])
                 y -= pic->get_w() / 2.0;
                 double r = std::sqrt(x * x + y * y);
                 if (r > pic->get_w() / 2.0)
-                    return color(0, 0, 0);
-                return a;
+                    a = color(0, 0, 0);
             });
 
-        line_chen(10, 100, 10, 50,
-                  [&pic](int32_t x, int32_t y, double d)
-                  {
-                      (*pic)(x, y) += color(1., 0., 0., std::max(1. - std::fabs(d), 0.));
-                  });
-
-        line_chen(10, 100, 10, 10,
-                  [&pic](int32_t x, int32_t y, double d)
-                  {
-                      (*pic)(x, y) += color(0., 1., 0., std::max(1. - std::fabs(d), 0.));
-                  });
-
-        line_chen(10, 80, 10, 100,
-                  [&pic](int32_t x, int32_t y, double d)
-                  {
-                      (*pic)(x, y) += color(0., 0., 1., std::max(1. - std::fabs(d), 0.));
-                  });
+        double D = 1.;
+        for (double a = 0; a < 2 * M_PI; a += 2 * M_PI / 32)
+        {
+            line(pic->get_w() / 2, pic->get_w() / 2 + 140 * std::cos(a), pic->get_h() / 2, pic->get_h() / 2 + 140 * std::sin(a), D,
+                 [&pic, D](int32_t x, int32_t y, double d)
+                 {
+                     (*pic)(x, y) += color(1., 0., 0., std::max(D / 2. - std::fabs(d), 0.) / (D / 2.));
+                 });
+            D += 1.;
+        }
 
         pic.save("test.png");
     }
