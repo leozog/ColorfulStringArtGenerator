@@ -4,6 +4,14 @@
 
 #include <cmath>
 #include <iostream>
+#include <syncstream>
+#include <chrono>
+#include <thread>
+
+double string_fn(double d)
+{
+    return std::max(std::min(1., 2. - d * 2.), 0.);
+}
 
 int main(int argc, char *argv[])
 {
@@ -45,7 +53,7 @@ int main(int argc, char *argv[])
             line(pic->get_w() / 2, pic->get_w() / 2 + 140 * std::cos(a), pic->get_h() / 2, pic->get_h() / 2 + 140 * std::sin(a), D,
                  [&pic, D](int32_t x, int32_t y, double d)
                  {
-                     (*pic)(x, y) += color(1., 0., 0., std::max(D / 2. - std::fabs(d), 0.) / (D / 2.));
+                     (*pic)(x, y) += color(1., 0., 0., string_fn(std::fabs(d) / (D / 2)));
                  });
             D += 1.;
         }
@@ -54,15 +62,21 @@ int main(int argc, char *argv[])
 
         thread_pool tp;
 
+        std::osyncstream sout(std::cout);
         std::vector<std::future<int>> futures;
 
-        for (int i = 0; i < 100; i++)
+        for (int i = 0; i < 10000; i++)
         {
-            std::function<int(int)> f = [](int i)
-            { std::cout << "calculating: " << i << std::endl; return i; };
+            std::function<int(int)> f = [&sout](int i)
+            {
+                std::cout << "calculating: " << i << std::endl;
+                using namespace std::chrono_literals;
+                std::this_thread::sleep_for(1ms);
+                return i;
+            };
             futures.push_back(tp.submit(
                 0, f,
-                i));
+                std::move(i)));
         }
 
         for (auto &f : futures)
@@ -72,7 +86,7 @@ int main(int argc, char *argv[])
     }
     catch (const char *err)
     {
-        std::cout << err << '\n';
+        std::cerr << err << '\n';
     }
 
     return 0;
