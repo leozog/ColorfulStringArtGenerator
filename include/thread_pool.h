@@ -6,52 +6,41 @@
 #include <thread>
 #include <future>
 
-class thread_pool
+class ThreadPool
 {
 private:
-    class task_base
+    class AbstractTask
     {
         const int priority;
 
     public:
-        task_base(int priority) : priority(priority) {}
+        AbstractTask(int priority);
         virtual void run() = 0;
-        virtual ~task_base() = default;
-        bool operator<(const task_base &other) const
-        {
-            return priority < other.priority;
-        }
+        virtual ~AbstractTask() = default;
+        bool operator<(const AbstractTask &other) const;
     };
 
     template <class R, class... Args>
-    class task : public task_base
+    class Task : public AbstractTask
     {
         const std::function<R(Args...)> func;
         std::promise<R> promise;
         std::tuple<Args...> args;
 
     public:
-        task(int priority, std::function<R(Args...)> func, Args &&...args) : task_base(priority), func(std::move(func)), args(std::forward<Args>(args)...) {}
-        void run() override
-        {
-            std::apply([this](Args &&...args)
-                       { promise.set_value(func(std::forward<Args>(args)...)); },
-                       std::move(args));
-        }
-        std::future<R> get_future()
-        {
-            return promise.get_future();
-        }
+        Task(int priority, std::function<R(Args...)> func, Args &&...args);
+        void run() override;
+        std::future<R> get_future();
     };
 
-    std::priority_queue<std::shared_ptr<task_base>> tasks;
+    std::priority_queue<std::shared_ptr<AbstractTask>> tasks;
     std::mutex tasks_mutex;
     std::condition_variable tasks_cv;
     std::vector<std::jthread> threads;
 
 public:
-    thread_pool(size_t n_threads);
-    ~thread_pool();
+    ThreadPool(size_t n_threads);
+    ~ThreadPool();
     template <class R, class... Args>
     std::future<R> submit(int priority, std::function<R(Args...)> f, Args &&...args);
 
@@ -59,16 +48,18 @@ private:
     void thread_loop(std::stop_token stop_token);
 };
 
-thread_pool::thread_pool(size_t n_threads = std::thread::hardware_concurrency())
+// ThreadPool
+ThreadPool::ThreadPool(size_t n_threads)
 {
+    n_threads = n_threads == -1 ? std::thread::hardware_concurrency() : std::max<size_t>(1, n_threads);
     std::unique_lock<std::mutex> lock(tasks_mutex);
     for (size_t i = 0; i < n_threads; i++)
     {
-        threads.emplace_back(std::jthread(&thread_pool::thread_loop, this));
+        threads.emplace_back(std::jthread(&ThreadPool::thread_loop, this));
     }
 }
 
-thread_pool::~thread_pool()
+ThreadPool::~ThreadPool()
 {
     for (auto &t : threads)
         t.request_stop();
@@ -76,9 +67,9 @@ thread_pool::~thread_pool()
 }
 
 template <class R, class... Args>
-std::future<R> thread_pool::submit(int priority, std::function<R(Args...)> f, Args &&...args)
+std::future<R> ThreadPool::submit(int priority, std::function<R(Args...)> f, Args &&...args)
 {
-    auto t = std::make_shared<task<R, Args...>>(priority, f, std::forward<Args>(args)...);
+    auto t = std::make_shared<Task<R, Args...>>(priority, f, std::forward<Args>(args)...);
     auto fut = t->get_future();
     {
         std::unique_lock<std::mutex> lock(tasks_mutex);
@@ -88,11 +79,11 @@ std::future<R> thread_pool::submit(int priority, std::function<R(Args...)> f, Ar
     return fut;
 }
 
-void thread_pool::thread_loop(std::stop_token stop_token)
+void ThreadPool::thread_loop(std::stop_token stop_token)
 {
     while (!stop_token.stop_requested())
     {
-        std::shared_ptr<task_base> t;
+        std::shared_ptr<AbstractTask> t;
         {
             std::unique_lock<std::mutex> lock(tasks_mutex);
             tasks_cv.wait(lock, [this, &stop_token]
@@ -105,3 +96,33 @@ void thread_pool::thread_loop(std::stop_token stop_token)
         t->run();
     }
 }
+// ThreadPool
+
+// ThreadPool::AbstractTask
+ThreadPool::AbstractTask::AbstractTask(int priority) : priority{priority} {}
+
+bool ThreadPool::AbstractTask::operator<(const AbstractTask &other) const
+{
+    return priority < other.priority;
+}
+// ThreadPool::AbstractTask
+
+// ThreadPool::Task
+template <class R, class... Args>
+ThreadPool::Task<R, Args...>::Task(int priority, std::function<R(Args...)> func, Args &&...args)
+    : AbstractTask(priority), func{std::move(func)}, args{std::forward<Args>(args)...} {}
+
+template <class R, class... Args>
+void ThreadPool::Task<R, Args...>::run()
+{
+    std::apply([this](Args &&...args)
+               { promise.set_value(func(std::forward<Args>(args)...)); },
+               std::move(args));
+}
+
+template <class R, class... Args>
+std::future<R> ThreadPool::Task<R, Args...>::get_future()
+{
+    return promise.get_future();
+}
+// ThreadPool::Task

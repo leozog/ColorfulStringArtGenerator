@@ -1,4 +1,5 @@
 #include "line.h"
+
 #include <cmath>
 #include <stdint.h>
 #include <functional>

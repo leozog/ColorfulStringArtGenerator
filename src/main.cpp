@@ -32,11 +32,11 @@ int main(int argc, char *argv[])
         if (pic_filename == "")
             throw "supply pic file name after -S";
 
-        img pic(pic_filename);
+        Img pic(pic_filename);
 
         // crop pic into circle
         pic->for_each(
-            [&pic](color &a, size_t _x, size_t _y)
+            [&pic](Color &a, size_t _x, size_t _y)
             {
                 double x = _x;
                 double y = _y;
@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
                 y -= pic->get_w() / 2.0;
                 double r = std::sqrt(x * x + y * y);
                 if (r > pic->get_w() / 2.0)
-                    a = color(0, 0, 0);
+                    a = Color(0, 0, 0);
             });
 
         double D = 1.;
@@ -53,14 +53,14 @@ int main(int argc, char *argv[])
             line(pic->get_w() / 2, pic->get_w() / 2 + 140 * std::cos(a), pic->get_h() / 2, pic->get_h() / 2 + 140 * std::sin(a), D,
                  [&pic, D](int32_t x, int32_t y, double d)
                  {
-                     (*pic)(x, y) += color(1., 0., 0., string_fn(std::fabs(d) / (D / 2)));
+                     (*pic)(x, y) += Color(1., 0., 0., string_fn(std::fabs(d) / (D / 2)));
                  });
             D += 1.;
         }
 
         pic.save("test.png");
 
-        thread_pool tp;
+        ThreadPool tp(-1);
 
         std::osyncstream sout(std::cout);
         std::vector<std::future<int>> futures;

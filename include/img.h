@@ -5,28 +5,31 @@
 #include <type_traits>
 #include "array2d.h"
 
-struct color
+struct Color
 {
     static constexpr uint8_t CHANNELS = 4;
     float r, g, b, a;
 
-    color(int r = 0, int g = 0, int b = 0, int a = 255);
-    color(double r, double g, double b, double a = 1.0f);
-    color operator+(const color &x) const;
-    color operator*(const double x) const;
-    color &operator+=(const color &x);
-    color &operator*=(const double x);
-    color clamp() const;
+    Color(int r = 0, int g = 0, int b = 0, int a = 255);
+    Color(double r, double g, double b, double a = 1.0f);
+    Color operator+(const Color &x) const;
+    Color operator*(const double x) const;
+    Color &operator+=(const Color &x);
+    Color &operator*=(const double x);
+    Color clamp() const;
 };
 
-class img
+class Img
 {
-    array2d<color> arr;
+private:
+    Array2d<Color> arr;
 
 public:
-    img(size_t w = 1, size_t h = 1);
-    img(std::string name);
-    array2d<color> &operator*();
-    array2d<color> *operator->();
+    Img(size_t w = 0, size_t h = 1);
+    Img(std::string name);
+    Array2d<Color> &operator*();
+    Array2d<Color> *operator->();
+    const Array2d<Color> &operator*() const;
+    const Array2d<Color> *operator->() const;
     void save(std::string name);
 };
