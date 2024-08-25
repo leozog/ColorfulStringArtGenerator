@@ -37,7 +37,7 @@ StringArtSolver::Builder &StringArtSolver::Builder::set_output_name(std::string 
     return *this;
 }
 
-StringArtSolver::Builder &StringArtSolver::Builder::set_n_threads(size_t n_threads)
+StringArtSolver::Builder &StringArtSolver::Builder::set_n_threads(int n_threads)
 {
     this->n_threads = n_threads;
     return *this;

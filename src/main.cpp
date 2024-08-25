@@ -35,17 +35,15 @@ int main(int argc, char *argv[])
         Img pic(pic_filename);
 
         // crop pic into circle
-        pic->for_each(
-            [&pic](Color &a, size_t _x, size_t _y)
-            {
-                double x = _x;
-                double y = _y;
-                x -= pic->get_w() / 2.0;
-                y -= pic->get_w() / 2.0;
-                double r = std::sqrt(x * x + y * y);
-                if (r > pic->get_w() / 2.0)
-                    a = Color(0, 0, 0);
-            });
+        std::for_each(pic->begin(), pic->end(),
+                      [&pic](Array2d<Color>::Element a)
+                      {
+                          double x = a.get_x() - pic->get_w() / 2.0;
+                          double y = a.get_y() - pic->get_h() / 2.0;
+                          double r = std::sqrt(x * x + y * y);
+                          if (r > pic->get_w() / 2.0)
+                              *a = Color(0, 0, 0);
+                      });
 
         double D = 1.;
         for (double a = 0; a < 2 * M_PI; a += 2 * M_PI / 32)
@@ -60,29 +58,29 @@ int main(int argc, char *argv[])
 
         pic.save("test.png");
 
-        ThreadPool tp(-1);
+        // ThreadPool tp(-1);
 
-        std::osyncstream sout(std::cout);
-        std::vector<std::future<int>> futures;
+        // std::osyncstream sout(std::cout);
+        // std::vector<std::future<int>> futures;
 
-        for (int i = 0; i < 10000; i++)
-        {
-            std::function<int(int)> f = [&sout](int i)
-            {
-                std::cout << "calculating: " << i << std::endl;
-                using namespace std::chrono_literals;
-                std::this_thread::sleep_for(1ms);
-                return i;
-            };
-            futures.push_back(tp.submit(
-                0, f,
-                std::move(i)));
-        }
+        // for (int i = 0; i < 10000; i++)
+        // {
+        //     std::function<int(int)> f = [&sout](int i)
+        //     {
+        //         std::cout << "calculating: " << i << std::endl;
+        //         using namespace std::chrono_literals;
+        //         std::this_thread::sleep_for(1ms);
+        //         return i;
+        //     };
+        //     futures.push_back(tp.submit(
+        //         0, f,
+        //         std::move(i)));
+        // }
 
-        for (auto &f : futures)
-        {
-            std::cout << f.get() << std::endl;
-        }
+        // for (auto &f : futures)
+        // {
+        //     std::cout << f.get() << std::endl;
+        // }
     }
     catch (const char *err)
     {

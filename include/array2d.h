@@ -11,6 +11,61 @@ protected:
     std::vector<T> arr;
 
 public:
+    class Element
+    {
+        friend class Array2d<T>;
+        Element(T *ptr, size_t x, size_t y);
+
+        T *ptr;
+        size_t x, y;
+
+    public:
+        T &operator*();
+        const T &operator*() const;
+        T *operator->();
+        const T *operator->() const;
+        T operator=(const T &t);
+        size_t get_x() const;
+        size_t get_y() const;
+    };
+
+    class ConstElement
+    {
+        friend class Array2d<T>;
+        ConstElement(T *ptr, size_t x, size_t y);
+
+        const T *ptr;
+        size_t x, y;
+
+    public:
+        const T &operator*() const;
+        const T *operator->() const;
+        size_t get_x() const;
+        size_t get_y() const;
+    };
+
+private:
+    template <typename E>
+    class IteratorBase
+    {
+        E e;
+        const size_t w;
+
+    public:
+        IteratorBase(E e, size_t w);
+        Array2d<T>::IteratorBase<E> &operator++();
+        Array2d<T>::IteratorBase<E> operator++(int);
+        Array2d<T>::IteratorBase<E> &operator--();
+        Array2d<T>::IteratorBase<E> operator--(int);
+        bool operator==(const IteratorBase &other) const;
+        bool operator!=(const IteratorBase &other) const;
+        E operator*() const;
+    };
+
+public:
+    using Iterator = IteratorBase<Element>;
+    using ConstIterator = IteratorBase<ConstElement>;
+
     Array2d(size_t w = 0, size_t h = 1);
     T &operator()(size_t x, size_t y);
     const T &operator()(size_t x, size_t y) const;
@@ -19,58 +74,10 @@ public:
     size_t get_h() const;
     size_t size() const;
     const T *data() const;
-    Array2d<T>::iterator begin();
-    Array2d<T>::iterator end();
-    Array2d<T>::const_iterator cbegin() const;
-    Array2d<T>::const_iterator cend() const;
-
-    class element
-    {
-    private:
-        T *const ptr;
-        const size_t x, y;
-
-    public:
-        element(T *ptr, size_t x, size_t y);
-        T &operator*();
-        const T &operator*() const;
-        T *operator->();
-        const T *operator->() const;
-        bool operator==(const element &other) const;
-        bool operator!=(const element &other) const;
-        size_t get_x() const;
-        size_t get_y() const;
-    };
-
-    class iterator
-    {
-    private:
-        element e;
-        const size_t w;
-
-    public:
-        iterator(element e, size_t w);
-        Array2d<T>::iterator &operator++();
-        Array2d<T>::iterator operator++(int);
-        bool operator==(const iterator &other) const;
-        bool operator!=(const iterator &other) const;
-        Array2d<T>::element &operator*();
-    };
-
-    class const_iterator
-    {
-    private:
-        element e;
-        const size_t w;
-
-    public:
-        const_iterator(element e, size_t w);
-        Array2d<T>::const_iterator &operator++();
-        Array2d<T>::const_iterator operator++(int);
-        bool operator==(const const_iterator &other) const;
-        bool operator!=(const const_iterator &other) const;
-        const Array2d<T>::element &operator*() const;
-    };
+    Array2d<T>::Iterator begin();
+    Array2d<T>::Iterator end();
+    Array2d<T>::ConstIterator cbegin() const;
+    Array2d<T>::ConstIterator cend() const;
 };
 
 // Array2d
@@ -144,107 +151,109 @@ const T *Array2d<T>::data() const
 }
 
 template <typename T>
-typename Array2d<T>::iterator Array2d<T>::begin() { return iterator{element{arr.data(), 0, 0}, w}; }
+typename Array2d<T>::Iterator Array2d<T>::begin() { return Iterator{Element{arr.data(), 0, 0}, w}; }
 
 template <typename T>
-typename Array2d<T>::iterator Array2d<T>::end() { return iterator{element{arr.data() + w * h, 0, h}, w}; }
+typename Array2d<T>::Iterator Array2d<T>::end() { return Iterator{Element{arr.data() + w * h, 0, h}, w}; }
 
 template <typename T>
-typename Array2d<T>::const_iterator Array2d<T>::cbegin() const { return const_iterator{element{arr.data(), 0, 0}, w}; }
+typename Array2d<T>::ConstIterator Array2d<T>::cbegin() const { return ConstIterator{ConstElement{arr.data(), 0, 0}, w}; }
 
 template <typename T>
-typename Array2d<T>::const_iterator Array2d<T>::cend() const { return const_iterator{element{arr.data() + w * h, 0, h}, w}; }
+typename Array2d<T>::ConstIterator Array2d<T>::cend() const { return ConstIterator{ConstElement{arr.data() + w * h, 0, h}, w}; }
 // Array2d
 
-// Array2d::element
+// Array2d::Element
 template <typename T>
-Array2d<T>::element::element(T *ptr, size_t x, size_t y) : ptr{ptr}, x{x}, y{y} {}
+Array2d<T>::Element::Element(T *ptr, size_t x, size_t y) : ptr{ptr}, x{x}, y{y} {}
 
 template <typename T>
-T &Array2d<T>::element::operator*() { return *ptr; }
+T &Array2d<T>::Element::operator*() { return *ptr; }
 
 template <typename T>
-const T &Array2d<T>::element::operator*() const { return *ptr; }
+const T &Array2d<T>::Element::operator*() const { return *ptr; }
 
 template <typename T>
-T *Array2d<T>::element::operator->() { return ptr; }
+T *Array2d<T>::Element::operator->() { return ptr; }
 
 template <typename T>
-const T *Array2d<T>::element::operator->() const { return ptr; }
+const T *Array2d<T>::Element::operator->() const { return ptr; }
 
 template <typename T>
-bool Array2d<T>::element::operator==(const element &other) const { return ptr == other.ptr; }
+T Array2d<T>::Element::operator=(const T &t) { return *ptr = t; }
 
 template <typename T>
-bool Array2d<T>::element::operator!=(const element &other) const { return ptr != other.ptr; }
+size_t Array2d<T>::Element::get_x() const { return x; }
 
 template <typename T>
-size_t Array2d<T>::element::get_x() const { return x; }
+size_t Array2d<T>::Element::get_y() const { return y; }
+// Array2d::Element
+
+// Array2d::ConstElement
+template <typename T>
+Array2d<T>::ConstElement::ConstElement(T *ptr, size_t x, size_t y) : ptr{ptr}, x{x}, y{y} {}
 
 template <typename T>
-size_t Array2d<T>::element::get_y() const { return y; }
-// Array2d::element
-
-// Array2d::iterator
-template <typename T>
-Array2d<T>::iterator::iterator(element e, size_t w) : e{e}, w{w} {}
+const T &Array2d<T>::ConstElement::operator*() const { return *ptr; }
 
 template <typename T>
-typename Array2d<T>::iterator &Array2d<T>::iterator::operator++()
+const T *Array2d<T>::ConstElement::operator->() const { return ptr; }
+
+template <typename T>
+size_t Array2d<T>::ConstElement::get_x() const { return x; }
+
+template <typename T>
+size_t Array2d<T>::ConstElement::get_y() const { return y; }
+// Array2d::ConstElement
+
+// Array2d::IteratorBase
+template <typename T>
+template <typename E>
+Array2d<T>::IteratorBase<E>::IteratorBase(E e, size_t w) : e{e}, w{w} {}
+
+template <typename T>
+template <typename E>
+Array2d<T>::IteratorBase<E> &Array2d<T>::IteratorBase<E>::operator++()
 {
-    e = element{
-        e.ptr + 1,
-        e.get_x() == w - 1 ? 0 : e.get_x() + 1,
-        e.get_x() == w - 1 ? e.get_y() + 1 : e.get_y()};
+    e = e.x != w - 1 ? E{e.ptr + 1, e.x + 1, e.y} : E{e.ptr + 1, 0, e.y + 1};
     return *this;
 }
 
 template <typename T>
-typename Array2d<T>::iterator Array2d<T>::iterator::operator++(int)
+template <typename E>
+Array2d<T>::IteratorBase<E> Array2d<T>::IteratorBase<E>::operator++(int)
 {
-    iterator tmp = *this;
+    IteratorBase tmp = *this;
     ++*this;
     return tmp;
 }
 
 template <typename T>
-bool Array2d<T>::iterator::operator==(const iterator &other) const { return e == other.e; }
-
-template <typename T>
-bool Array2d<T>::iterator::operator!=(const iterator &other) const { return e != other.e; }
-
-template <typename T>
-typename Array2d<T>::element &Array2d<T>::iterator::operator*() { return e; }
-// Array2d::iterator
-
-// Array2d::const_iterator
-template <typename T>
-Array2d<T>::const_iterator::const_iterator(element e, size_t w) : e{e}, w{w} {}
-
-template <typename T>
-typename Array2d<T>::const_iterator &Array2d<T>::const_iterator::operator++()
+template <typename E>
+Array2d<T>::IteratorBase<E> &Array2d<T>::IteratorBase<E>::operator--()
 {
-    e = element{
-        e.ptr + 1,
-        e.get_x() == w - 1 ? 0 : e.get_x() + 1,
-        e.get_x() == w - 1 ? e.get_y() + 1 : e.get_y()};
+    e = e.x != 0 ? E{e.ptr - 1, e.x - 1, e.y} : E{e.ptr - 1, w - 1, e.y - 1};
     return *this;
 }
 
 template <typename T>
-typename Array2d<T>::const_iterator Array2d<T>::const_iterator::operator++(int)
+template <typename E>
+Array2d<T>::IteratorBase<E> Array2d<T>::IteratorBase<E>::operator--(int)
 {
-    const_iterator tmp = *this;
-    ++*this;
+    IteratorBase tmp = *this;
+    --*this;
     return tmp;
 }
 
 template <typename T>
-bool Array2d<T>::const_iterator::operator==(const const_iterator &other) const { return e == other.e; }
+template <typename E>
+bool Array2d<T>::IteratorBase<E>::operator==(const IteratorBase &other) const { return e.ptr == other.e.ptr; }
 
 template <typename T>
-bool Array2d<T>::const_iterator::operator!=(const const_iterator &other) const { return e != other.e; }
+template <typename E>
+bool Array2d<T>::IteratorBase<E>::operator!=(const IteratorBase &other) const { return !(*this == other); }
 
 template <typename T>
-const typename Array2d<T>::element &Array2d<T>::const_iterator::operator*() const { return e; }
-// Array2d::const_iterator
+template <typename E>
+E Array2d<T>::IteratorBase<E>::operator*() const { return e; }
+// Array2d::IteratorBase

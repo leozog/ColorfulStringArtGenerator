@@ -64,7 +64,7 @@ Img::Img(std::string name)
     uint8_t *data_inerator = data;
     arr = Array2d<Color>(w, h);
     std::for_each(arr.begin(), arr.end(),
-                  [&data_inerator](Array2d<Color>::element &a)
+                  [&data_inerator](Array2d<Color>::Element a)
                   {
                       *a = Color(data_inerator[0], data_inerator[1], data_inerator[2], data_inerator[3]);
                       data_inerator += Color::CHANNELS;
@@ -80,15 +80,14 @@ const Array2d<Color> *Img::operator->() const { return &arr; }
 void Img::save(std::string name)
 {
     Array2d<uint8_t> out_arr(arr.get_w() * Color::CHANNELS, arr.get_h());
-    std::for_each(arr.begin(), arr.end(),
-                  [&out_arr](Array2d<Color>::element &a, size_t x, size_t y)
-                  {
-                      a->clamp();
-                      out_arr(x * Color::CHANNELS + 0, y) = a->r * 255;
-                      out_arr(x * Color::CHANNELS + 1, y) = a->g * 255;
-                      out_arr(x * Color::CHANNELS + 2, y) = a->b * 255;
-                      out_arr(x * Color::CHANNELS + 3, y) = a->a * 255;
-                  });
+    Array2d<uint8_t>::Iterator out_it = out_arr.begin();
+    for (Array2d<Color>::Element it : arr)
+    {
+        *out_it++ = static_cast<uint8_t>(it->r * 255);
+        *out_it++ = static_cast<uint8_t>(it->g * 255);
+        *out_it++ = static_cast<uint8_t>(it->b * 255);
+        *out_it++ = static_cast<uint8_t>(it->a * 255);
+    }
     if (name.ends_with(".png"))
         stbi_write_png(name.c_str(), arr.get_w(), arr.get_h(), 4, out_arr.data(), out_arr.get_w() * sizeof(uint8_t));
     else if (name.ends_with(".bmp"))

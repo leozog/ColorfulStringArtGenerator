@@ -10,7 +10,7 @@ private:
     const std::string output_name;
     ThreadPool pool;
 
-    StringArtSolver(Img &&input_img, std::vector<Color> &&palette, std::string &&output_name, size_t n_threads);
+    StringArtSolver(Img &&input_img, std::vector<Color> &&palette, std::string &&output_name, int n_threads);
 
 public:
     void solve();
@@ -20,7 +20,7 @@ public:
     private:
         Img input_img;
         std::vector<Color> palette;
-        size_t n_threads;
+        int n_threads;
         std::string output_name;
 
     public:
@@ -29,6 +29,6 @@ public:
         Builder &set_input_img(Img &&input_img);
         Builder &set_palette(std::vector<Color> &&palette);
         Builder &set_output_name(std::string &&output_name);
-        Builder &set_n_threads(size_t n_threads);
+        Builder &set_n_threads(int n_threads);
     };
 };
