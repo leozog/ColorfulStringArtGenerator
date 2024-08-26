@@ -43,6 +43,7 @@ public:
     ~ThreadPool();
     template <class R, class... Args>
     std::future<R> submit(int priority, std::function<R(Args...)> f, Args &&...args);
+    int get_n_threads() const;
 
 private:
     void thread_loop(std::stop_token stop_token);
@@ -71,9 +72,15 @@ ThreadPool::Task<R, Args...>::Task(int priority, std::function<R(Args...)> func,
 template <class R, class... Args>
 void ThreadPool::Task<R, Args...>::run()
 {
-    std::apply([this](Args &&...args)
-               { promise.set_value(func(std::forward<Args>(args)...)); },
-               std::move(args));
+    if constexpr (std::is_void_v<R>)
+    {
+        std::apply(func, args);
+        promise.set_value();
+    }
+    else
+    {
+        promise.set_value(std::apply(func, args));
+    }
 }
 
 template <class R, class... Args>

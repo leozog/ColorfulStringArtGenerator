@@ -1,6 +1,7 @@
 #include "img.h"
 #include "line.h"
 #include "thread_pool.h"
+#include "string_art_solver.h"
 
 #include <cmath>
 #include <iostream>
@@ -58,29 +59,16 @@ int main(int argc, char *argv[])
 
         pic.save("test.png");
 
-        // ThreadPool tp(-1);
+        ThreadPool tp(-1);
 
-        // std::osyncstream sout(std::cout);
-        // std::vector<std::future<int>> futures;
+        StringArtSolver string_art_solver = StringArtSolver::Builder()
+                                                .set_input_img(std::move(pic))
+                                                .set_palette({Color(1., 0., 0.), Color(0., 1., 0.), Color(0., 0., 1.)})
+                                                .set_output_name("test2.png")
+                                                .set_thread_pool(tp)
+                                                .build();
 
-        // for (int i = 0; i < 10000; i++)
-        // {
-        //     std::function<int(int)> f = [&sout](int i)
-        //     {
-        //         std::cout << "calculating: " << i << std::endl;
-        //         using namespace std::chrono_literals;
-        //         std::this_thread::sleep_for(1ms);
-        //         return i;
-        //     };
-        //     futures.push_back(tp.submit(
-        //         0, f,
-        //         std::move(i)));
-        // }
-
-        // for (auto &f : futures)
-        // {
-        //     std::cout << f.get() << std::endl;
-        // }
+        string_art_solver.solve();
     }
     catch (const char *err)
     {

@@ -1,6 +1,11 @@
 #include "string_art_solver.h"
 
-StringArtSolver::Builder::Builder() : input_img{}, palette{}, output_name{""}, n_threads{-1}
+StringArtSolver::StringArtSolver(Img &&input_img, std::vector<Color> &&palette, std::string &&output_name, ThreadPool &thread_pool)
+    : input_img{std::move(input_img)}, palette{std::move(palette)}, output_name{std::move(output_name)}, thread_pool{thread_pool}
+{
+}
+
+StringArtSolver::Builder::Builder() : input_img{}, palette{}, output_name{""}, thread_pool{std::nullopt}
 {
 }
 
@@ -10,13 +15,15 @@ StringArtSolver StringArtSolver::Builder::build()
         throw std::invalid_argument("input image is empty");
     if (palette.size() == 0)
         throw std::invalid_argument("palette is empty");
-    if (n_threads <= -1 || n_threads == 0)
-        throw std::invalid_argument("invalid number of threads: " + std::to_string(n_threads));
+    if (output_name.size() == 0)
+        throw std::invalid_argument("output name is empty");
+    if (!thread_pool.has_value())
+        throw std::invalid_argument("thread pool is not set");
     return StringArtSolver(
         std::move(input_img),
         std::move(palette),
         std::move(output_name),
-        n_threads);
+        thread_pool.value().get());
 }
 
 StringArtSolver::Builder &StringArtSolver::Builder::set_input_img(Img &&input_img)
@@ -37,8 +44,8 @@ StringArtSolver::Builder &StringArtSolver::Builder::set_output_name(std::string 
     return *this;
 }
 
-StringArtSolver::Builder &StringArtSolver::Builder::set_n_threads(int n_threads)
+StringArtSolver::Builder &StringArtSolver::Builder::set_thread_pool(ThreadPool &thread_pool)
 {
-    this->n_threads = n_threads;
+    this->thread_pool = std::make_optional(std::ref(thread_pool));
     return *this;
 }
