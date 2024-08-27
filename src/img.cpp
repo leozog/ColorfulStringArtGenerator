@@ -57,10 +57,10 @@ Img::Img(size_t w, size_t h) : arr(w, h)
 {
 }
 
-Img::Img(std::string name)
+Img::Img(std::string path)
 {
     int w, h, n;
-    uint8_t *data = stbi_load(name.c_str(), &w, &h, &n, Color::CHANNELS);
+    uint8_t *data = stbi_load(path.c_str(), &w, &h, &n, Color::CHANNELS);
     uint8_t *data_inerator = data;
     arr = Array2d<Color>(w, h);
     std::for_each(arr.begin(), arr.end(),
@@ -77,7 +77,7 @@ Array2d<Color> *Img::operator->() { return &arr; }
 const Array2d<Color> &Img::operator*() const { return arr; }
 const Array2d<Color> *Img::operator->() const { return &arr; }
 
-void Img::save(std::string name)
+void Img::save(std::string path)
 {
     Array2d<uint8_t> out_arr(arr.get_w() * Color::CHANNELS, arr.get_h());
     Array2d<uint8_t>::Iterator out_it = out_arr.begin();
@@ -88,12 +88,12 @@ void Img::save(std::string name)
         *out_it++ = static_cast<uint8_t>(it->b * 255);
         *out_it++ = static_cast<uint8_t>(it->a * 255);
     }
-    if (name.ends_with(".png"))
-        stbi_write_png(name.c_str(), arr.get_w(), arr.get_h(), 4, out_arr.data(), out_arr.get_w() * sizeof(uint8_t));
-    else if (name.ends_with(".bmp"))
-        stbi_write_bmp(name.c_str(), arr.get_w(), arr.get_h(), 4, out_arr.data());
-    else if (name.ends_with(".jpg"))
-        stbi_write_jpg(name.c_str(), arr.get_w(), arr.get_h(), 4, out_arr.data(), 95 /*quality*/);
+    if (path.ends_with(".png"))
+        stbi_write_png(path.c_str(), arr.get_w(), arr.get_h(), 4, out_arr.data(), out_arr.get_w() * sizeof(uint8_t));
+    else if (path.ends_with(".bmp"))
+        stbi_write_bmp(path.c_str(), arr.get_w(), arr.get_h(), 4, out_arr.data());
+    else if (path.ends_with(".jpg"))
+        stbi_write_jpg(path.c_str(), arr.get_w(), arr.get_h(), 4, out_arr.data(), 95 /*quality*/);
     else
         throw "unsupported image output format";
 }

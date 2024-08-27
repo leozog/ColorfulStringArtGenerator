@@ -26,10 +26,10 @@ private:
 
 public:
     Img(size_t w = 0, size_t h = 1);
-    Img(std::string name);
+    Img(std::string path);
     Array2d<Color> &operator*();
     Array2d<Color> *operator->();
     const Array2d<Color> &operator*() const;
     const Array2d<Color> *operator->() const;
-    void save(std::string name);
+    void save(std::string path);
 };
