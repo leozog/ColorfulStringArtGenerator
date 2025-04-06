@@ -1,9 +1,9 @@
 #pragma once
-#include <string>
-#include <stdint.h>
-#include <limits>
-#include <type_traits>
 #include "array2d.h"
+#include <limits>
+#include <stdint.h>
+#include <string>
+#include <type_traits>
 
 struct Color
 {
@@ -12,10 +12,10 @@ struct Color
 
     Color(int r = 0, int g = 0, int b = 0, int a = 255);
     Color(double r, double g, double b, double a = 1.0f);
-    Color operator+(const Color &x) const;
+    Color operator+(const Color& x) const;
     Color operator*(const double x) const;
-    Color &operator+=(const Color &x);
-    Color &operator*=(const double x);
+    Color& operator+=(const Color& x);
+    Color& operator*=(const double x);
     Color clamp() const;
 };
 
@@ -27,9 +27,9 @@ private:
 public:
     Img(size_t w = 0, size_t h = 1);
     Img(std::string path);
-    Array2d<Color> &operator*();
-    Array2d<Color> *operator->();
-    const Array2d<Color> &operator*() const;
-    const Array2d<Color> *operator->() const;
+    Array2d<Color>& operator*();
+    Array2d<Color>* operator->();
+    const Array2d<Color>& operator*() const;
+    const Array2d<Color>* operator->() const;
     void save(std::string path);
 };

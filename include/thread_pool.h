@@ -1,10 +1,10 @@
 #pragma once
 #include <cstdint>
 #include <functional>
-#include <vector>
+#include <future>
 #include <queue>
 #include <thread>
-#include <future>
+#include <vector>
 
 class ThreadPool
 {
@@ -17,10 +17,10 @@ private:
         AbstractTask(int priority);
         virtual void run() = 0;
         virtual ~AbstractTask() = default;
-        bool operator<(const AbstractTask &other) const;
+        bool operator<(const AbstractTask& other) const;
     };
 
-    template <class R, class... Args>
+    template<class R, class... Args>
     class Task : public AbstractTask
     {
         const std::function<R(Args...)> func;
@@ -28,7 +28,7 @@ private:
         std::tuple<Args...> args;
 
     public:
-        Task(int priority, std::function<R(Args...)> func, Args &&...args);
+        Task(int priority, std::function<R(Args...)> func, Args&&... args);
         void run() override;
         std::future<R> get_future();
     };
@@ -40,9 +40,10 @@ private:
 
 public:
     ThreadPool(int n_threads);
+    ThreadPool();
     ~ThreadPool();
-    template <class R, class... Args>
-    std::future<R> submit(int priority, std::function<R(Args...)> f, Args &&...args);
+    template<class R, class... Args>
+    std::future<R> submit(int priority, std::function<R(Args...)> f, Args&&... args);
     int get_n_threads() const;
 
 private:
@@ -50,8 +51,8 @@ private:
 };
 
 // ThreadPool
-template <class R, class... Args>
-std::future<R> ThreadPool::submit(int priority, std::function<R(Args...)> f, Args &&...args)
+template<class R, class... Args>
+std::future<R> ThreadPool::submit(int priority, std::function<R(Args...)> f, Args&&... args)
 {
     auto t = std::make_shared<Task<R, Args...>>(priority, f, std::forward<Args>(args)...);
     auto fut = t->get_future();
@@ -65,25 +66,26 @@ std::future<R> ThreadPool::submit(int priority, std::function<R(Args...)> f, Arg
 // ThreadPool
 
 // ThreadPool::Task
-template <class R, class... Args>
-ThreadPool::Task<R, Args...>::Task(int priority, std::function<R(Args...)> func, Args &&...args)
-    : AbstractTask(priority), func{std::move(func)}, args{std::forward<Args>(args)...} {}
+template<class R, class... Args>
+ThreadPool::Task<R, Args...>::Task(int priority, std::function<R(Args...)> func, Args&&... args)
+    : AbstractTask(priority)
+    , func{ std::move(func) }
+    , args{ std::forward<Args>(args)... }
+{
+}
 
-template <class R, class... Args>
+template<class R, class... Args>
 void ThreadPool::Task<R, Args...>::run()
 {
-    if constexpr (std::is_void_v<R>)
-    {
+    if constexpr (std::is_void_v<R>) {
         std::apply(func, args);
         promise.set_value();
-    }
-    else
-    {
+    } else {
         promise.set_value(std::apply(func, args));
     }
 }
 
-template <class R, class... Args>
+template<class R, class... Args>
 std::future<R> ThreadPool::Task<R, Args...>::get_future()
 {
     return promise.get_future();

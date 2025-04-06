@@ -1,14 +1,11 @@
 #include "string_art_solver.h"
 #include "vec.h"
 
-#include <iostream>
 #include <algorithm>
-
+#include <iostream>
 
 void StringArtSolver::solve()
 {
-    for(const Color &color : palette)
-    {
-    
+    for (const Color& color : palette) {
     }
 }
