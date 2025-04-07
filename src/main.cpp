@@ -6,6 +6,7 @@
 #include <chrono>
 #include <cmath>
 #include <iostream>
+#include <numbers>
 #include <syncstream>
 #include <thread>
 
@@ -44,7 +45,7 @@ int main(int argc, char* argv[])
         });
 
         double D{ 1.0 };
-        for (double a = 0; a < 2 * M_PI; a += 2 * M_PI / 32) {
+        for (double a = 0; a < 2 * std::numbers::pi; a += 2 * std::numbers::pi / 32) {
             line(pic->get_w() / 2,
                  pic->get_w() / 2 + 140 * std::cos(a),
                  pic->get_h() / 2,

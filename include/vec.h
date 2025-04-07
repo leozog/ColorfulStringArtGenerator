@@ -1,121 +1,283 @@
 #pragma once
 
 #include <array>
+#include <cassert>
 #include <cmath>
 #include <cstddef>
+#include <numeric>
+#include <stdexcept>
+#include <type_traits>
 
-template<typename T>
-struct Vec2
+#define VEC_COMPONENT_ALIAS(name, index)                                                                               \
+    auto& name()                                                                                                       \
+    {                                                                                                                  \
+        return this->components[index];                                                                                \
+    }                                                                                                                  \
+    const auto& name() const                                                                                           \
+    {                                                                                                                  \
+        return this->components[index];                                                                                \
+    }
+
+template<typename T, std::size_t N>
+struct Vec
 {
-    T x, y;
+    std::array<T, N> components;
 
-    Vec2(T x = 0, T y = 0);
+    Vec();
+    Vec(const std::array<T, N>& components);
+
+    template<typename... Args, typename = typename std::enable_if<sizeof...(Args) == N>::type>
+    Vec(Args... args);
+
     template<typename U>
-    operator Vec2<U>() const;
-    Vec2 operator+(const Vec2& v) const;
-    Vec2 operator-(const Vec2& v) const;
-    Vec2 operator*(T s) const;
-    Vec2 operator/(T s) const;
-    Vec2& operator+=(const Vec2& v);
-    Vec2& operator-=(const Vec2& v);
-    Vec2& operator*=(T s);
-    Vec2& operator/=(T s);
-    double dot(const Vec2& v) const;
+    inline operator Vec<U, N>() const;
+
+    T& operator[](std::size_t index);
+    const T& operator[](std::size_t index) const;
+
+    Vec operator+(const Vec& v) const;
+    Vec operator-(const Vec& v) const;
+    Vec operator*(T s) const;
+    Vec operator/(T s) const;
+    Vec& operator+=(const Vec& v);
+    Vec& operator-=(const Vec& v);
+    Vec& operator*=(T s);
+    Vec& operator/=(T s);
+
+    double dot(const Vec& v) const;
     double len() const;
-    Vec2 norm() const;
-    Vec2 perp() const;
+    Vec norm() const;
+    Vec<T, N> perp() const
+    requires(N == 2);
+    Vec<T, N> cross(const Vec<T, N>& v) const
+    requires(N == 3);
+    double dist(const Vec& v) const;
+    double dist_sq(const Vec& v) const;
+    double angle(const Vec& v) const;
+    Vec<T, N> rotate(double angle) const
+    requires(N == 2);
+    Vec<T, N> rotate(const Vec& axis, double angle) const
+    requires(N == 3);
+    Vec lerp(const Vec& v, double t) const;
 };
 
-template<typename T>
-Vec2<T>::Vec2(T x, T y)
-    : x(x)
-    , y(y)
+template<typename T, std::size_t N>
+Vec<T, N>::Vec()
+{
+    components.fill(T(0));
+}
+
+template<typename T, std::size_t N>
+Vec<T, N>::Vec(const std::array<T, N>& components)
+    : components(components)
 {
 }
 
-template<typename T>
+template<typename T, std::size_t N>
+template<typename... Args, typename>
+Vec<T, N>::Vec(Args... args)
+    : components{ static_cast<T>(args)... }
+{
+}
+
+template<typename T, std::size_t N>
 template<typename U>
-inline Vec2<T>::operator Vec2<U>() const
+inline Vec<T, N>::operator Vec<U, N>() const
 {
-    return Vec2<U>(static_cast<U>(x), static_cast<U>(y));
+    std::array<U, N> converted;
+    for (std::size_t i = 0; i < N; ++i) {
+        converted[i] = static_cast<U>(components[i]);
+    }
+    return Vec<U, N>(converted);
 }
 
-template<typename T>
-Vec2<T> Vec2<T>::operator+(const Vec2<T>& v) const
+template<typename T, std::size_t N>
+T& Vec<T, N>::operator[](std::size_t index)
 {
-    return Vec2<T>(x + v.x, y + v.y);
+    assert(index < N && "Index out of bounds");
+    return components[index];
 }
 
-template<typename T>
-Vec2<T> Vec2<T>::operator-(const Vec2<T>& v) const
+template<typename T, std::size_t N>
+const T& Vec<T, N>::operator[](std::size_t index) const
 {
-    return Vec2<T>(x - v.x, y - v.y);
+    assert(index < N && "Index out of bounds");
+    return components[index];
 }
 
-template<typename T>
-Vec2<T> Vec2<T>::operator*(T s) const
+template<typename T, std::size_t N>
+Vec<T, N> Vec<T, N>::operator+(const Vec<T, N>& v) const
 {
-    return Vec2<T>(x * s, y * s);
+    Vec<T, N> result;
+    for (std::size_t i = 0; i < N; ++i) {
+        result.components[i] = components[i] + v.components[i];
+    }
+    return result;
 }
 
-template<typename T>
-Vec2<T> Vec2<T>::operator/(T s) const
+template<typename T, std::size_t N>
+Vec<T, N> Vec<T, N>::operator-(const Vec<T, N>& v) const
 {
-    return Vec2<T>(x / s, y / s);
+    Vec<T, N> result;
+    for (std::size_t i = 0; i < N; ++i) {
+        result.components[i] = components[i] - v.components[i];
+    }
+    return result;
 }
 
-template<typename T>
-Vec2<T>& Vec2<T>::operator+=(const Vec2<T>& v)
+template<typename T, std::size_t N>
+Vec<T, N> Vec<T, N>::operator*(T s) const
 {
-    x += v.x;
-    y += v.y;
+    Vec<T, N> result;
+    for (std::size_t i = 0; i < N; ++i) {
+        result.components[i] = components[i] * s;
+    }
+    return result;
+}
+
+template<typename T, std::size_t N>
+Vec<T, N> Vec<T, N>::operator/(T s) const
+{
+    if (s == 0) {
+        throw std::runtime_error("Division by zero");
+    }
+    Vec<T, N> result;
+    for (std::size_t i = 0; i < N; ++i) {
+        result.components[i] = components[i] / s;
+    }
+    return result;
+}
+
+template<typename T, std::size_t N>
+Vec<T, N>& Vec<T, N>::operator+=(const Vec<T, N>& v)
+{
+    for (std::size_t i = 0; i < N; ++i) {
+        components[i] += v.components[i];
+    }
     return *this;
 }
 
-template<typename T>
-Vec2<T>& Vec2<T>::operator-=(const Vec2<T>& v)
+template<typename T, std::size_t N>
+Vec<T, N>& Vec<T, N>::operator-=(const Vec<T, N>& v)
 {
-    x -= v.x;
-    y -= v.y;
+    for (std::size_t i = 0; i < N; ++i) {
+        components[i] -= v.components[i];
+    }
     return *this;
 }
 
-template<typename T>
-Vec2<T>& Vec2<T>::operator*=(T s)
+template<typename T, std::size_t N>
+Vec<T, N>& Vec<T, N>::operator*=(T s)
 {
-    x *= s;
-    y *= s;
+    for (std::size_t i = 0; i < N; ++i) {
+        components[i] *= s;
+    }
     return *this;
 }
 
-template<typename T>
-Vec2<T>& Vec2<T>::operator/=(T s)
+template<typename T, std::size_t N>
+Vec<T, N>& Vec<T, N>::operator/=(T s)
 {
-    x /= s;
-    y /= s;
+    if (s == 0) {
+        throw std::runtime_error("Division by zero");
+    }
+    for (std::size_t i = 0; i < N; ++i) {
+        components[i] /= s;
+    }
     return *this;
 }
 
-template<typename T>
-double Vec2<T>::dot(const Vec2<T>& v) const
+template<typename T, std::size_t N>
+double Vec<T, N>::dot(const Vec<T, N>& v) const
 {
-    return x * v.x + y * v.y;
+    double result = 0;
+    for (std::size_t i = 0; i < N; ++i) {
+        result += components[i] * v.components[i];
+    }
+    return result;
 }
 
-template<typename T>
-double Vec2<T>::len() const
+template<typename T, std::size_t N>
+double Vec<T, N>::len() const
 {
-    return std::sqrt(x * x + y * y);
+    return std::sqrt(dot(*this));
 }
 
-template<typename T>
-Vec2<T> Vec2<T>::norm() const
+template<typename T, std::size_t N>
+Vec<T, N> Vec<T, N>::norm() const
 {
-    return *this / len();
+    double length = len();
+    if (length == 0) {
+        return Vec<T, N>();
+    }
+    return *this / length;
 }
 
-template<typename T>
-Vec2<T> Vec2<T>::perp() const
+template<typename T, std::size_t N>
+Vec<T, N> Vec<T, N>::perp() const
+requires(N == 2)
 {
-    return Vec2<T>(-y, x);
+    return Vec<T, N>{ -components[1], components[0] };
+}
+
+template<typename T, std::size_t N>
+Vec<T, N> Vec<T, N>::cross(const Vec<T, N>& v) const
+requires(N == 3)
+{
+    return Vec<T, N>{ components[1] * v.components[2] - components[2] * v.components[1],
+                      components[2] * v.components[0] - components[0] * v.components[2],
+                      components[0] * v.components[1] - components[1] * v.components[0] };
+}
+
+template<typename T, std::size_t N>
+double Vec<T, N>::dist(const Vec<T, N>& v) const
+{
+    return std::sqrt(dist_sq(v));
+}
+
+template<typename T, std::size_t N>
+double Vec<T, N>::dist_sq(const Vec<T, N>& v) const
+{
+    double result = 0;
+    for (std::size_t i = 0; i < N; ++i) {
+        double diff = components[i] - v.components[i];
+        result += diff * diff;
+    }
+    return result;
+}
+
+template<typename T, std::size_t N>
+double Vec<T, N>::angle(const Vec<T, N>& v) const
+{
+    double dot_product = dot(v);
+    double lengths = len() * v.len();
+    if (lengths == 0) {
+        return 0;
+    }
+    return std::acos(dot_product / lengths);
+}
+
+template<typename T, std::size_t N>
+Vec<T, N> Vec<T, N>::rotate(double angle) const
+requires(N == 2)
+{
+    double cos_angle = std::cos(angle);
+    double sin_angle = std::sin(angle);
+    return Vec<T, N>{ components[0] * cos_angle - components[1] * sin_angle,
+                      components[0] * sin_angle + components[1] * cos_angle };
+}
+
+template<typename T, std::size_t N>
+Vec<T, N> Vec<T, N>::rotate(const Vec<T, N>& axis, double angle) const
+requires(N == 3)
+{
+    double cos_angle = std::cos(angle);
+    double sin_angle = std::sin(angle);
+    return *this * cos_angle + axis.cross(*this) * sin_angle + axis * axis.dot(*this) * (1 - cos_angle);
+}
+
+template<typename T, std::size_t N>
+Vec<T, N> Vec<T, N>::lerp(const Vec<T, N>& v, double t) const
+{
+    return *this + (v - *this) * t;
 }

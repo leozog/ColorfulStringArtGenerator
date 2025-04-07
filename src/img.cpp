@@ -7,34 +7,28 @@
 #include <algorithm>
 
 // color
-Color::Color(int r, int g, int b, int a)
-    : r{ r / 255.f }
-    , g{ g / 255.f }
-    , b{ b / 255.f }
-    , a{ a / 255.f }
+Color::Color(double r, double g, double b, double a)
+    : Vec(r, g, b, a)
 {
 }
 
-Color::Color(double r, double g, double b, double a)
-    : r{ static_cast<float>(r) }
-    , g{ static_cast<float>(g) }
-    , b{ static_cast<float>(b) }
-    , a{ static_cast<float>(a) }
+Color::Color(int r, int g, int b, int a)
+    : Color(r / 255.f, g / 255.f, b / 255.f, a / 255.f)
 {
 }
 
 Color Color::operator+(const Color& x) const
 {
-    float ao = x.a + a * (1. - x.a);
-    return Color((x.r * x.a + r * a * (1 - x.a)) / ao,
-                 (x.g * x.a + g * a * (1 - x.a)) / ao,
-                 (x.b * x.a + b * a * (1 - x.a)) / ao,
+    float ao = x.a() + a() * (1. - x.a());
+    return Color((x.r() * x.a() + r() * a() * (1 - x.a())) / ao,
+                 (x.g() * x.a() + g() * a() * (1 - x.a())) / ao,
+                 (x.b() * x.a() + b() * a() * (1 - x.a())) / ao,
                  ao);
 }
 
-Color Color::operator*(const double x) const
+Color Color::operator-(const Color& x) const
 {
-    return Color(r * x, g * x, b * x, a);
+    return this->operator+(Color(-x.r(), -x.g(), -x.b(), -x.a()));
 }
 
 Color& Color::operator+=(const Color& x)
@@ -43,15 +37,16 @@ Color& Color::operator+=(const Color& x)
     return *this;
 }
 
-Color& Color::operator*=(const double x)
+Color& Color::operator-=(const Color& x)
 {
-    *this = *this * x;
+    *this = *this - x;
     return *this;
 }
 
 Color Color::clamp() const
 {
-    return Color(std::clamp(r, 0.f, 1.f), std::clamp(g, 0.f, 1.f), std::clamp(b, 0.f, 1.f), std::clamp(a, 0.f, 1.f));
+    return Color(
+        std::clamp(r(), 0.f, 1.f), std::clamp(g(), 0.f, 1.f), std::clamp(b(), 0.f, 1.f), std::clamp(a(), 0.f, 1.f));
 }
 // color
 
@@ -99,10 +94,11 @@ void Img::save(std::string path)
     Array2d<uint8_t> out_arr(arr.get_w() * Color::CHANNELS, arr.get_h());
     Array2d<uint8_t>::Iterator out_it = out_arr.begin();
     for (Array2d<Color>::Element it : arr) {
-        *out_it++ = static_cast<uint8_t>(it->r * 255);
-        *out_it++ = static_cast<uint8_t>(it->g * 255);
-        *out_it++ = static_cast<uint8_t>(it->b * 255);
-        *out_it++ = static_cast<uint8_t>(it->a * 255);
+        it = it->clamp();
+        *out_it++ = static_cast<uint8_t>(it->r() * 255);
+        *out_it++ = static_cast<uint8_t>(it->g() * 255);
+        *out_it++ = static_cast<uint8_t>(it->b() * 255);
+        *out_it++ = static_cast<uint8_t>(it->a() * 255);
     }
     if (path.ends_with(".png")) {
         stbi_write_png(path.c_str(), arr.get_w(), arr.get_h(), 4, out_arr.data(), out_arr.get_w() * sizeof(uint8_t));

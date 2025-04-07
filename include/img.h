@@ -1,21 +1,27 @@
 #pragma once
 #include "array2d.h"
+#include "vec.h"
+
 #include <limits>
 #include <stdint.h>
 #include <string>
 #include <type_traits>
 
-struct Color
+struct Color : public Vec<float, 4>
 {
-    static constexpr uint8_t CHANNELS = 4;
-    float r, g, b, a;
+    static constexpr int CHANNELS = 4;
 
-    Color(int r = 0, int g = 0, int b = 0, int a = 255);
+    VEC_COMPONENT_ALIAS(r, 0);
+    VEC_COMPONENT_ALIAS(g, 1);
+    VEC_COMPONENT_ALIAS(b, 2);
+    VEC_COMPONENT_ALIAS(a, 3);
+
     Color(double r, double g, double b, double a = 1.0f);
+    Color(int r = 0, int g = 0, int b = 0, int a = 255);
     Color operator+(const Color& x) const;
-    Color operator*(const double x) const;
+    Color operator-(const Color& x) const;
     Color& operator+=(const Color& x);
-    Color& operator*=(const double x);
+    Color& operator-=(const Color& x);
     Color clamp() const;
 };
 

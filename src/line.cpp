@@ -41,7 +41,7 @@ void line(int32_t x1, int32_t x2, int32_t y1, int32_t y2, double t, std::functio
         double cosa{ (double)dx / length };
 
         // thickness of the line
-        int32_t T{ std::ceil(std::fabs(t - 1) / 2 + std::fabs(sina)) };
+        int32_t T{ static_cast<int32_t>(std::ceil(std::fabs(t - 1) / 2 + std::fabs(sina))) };
 
         while (x <= x2) {
             for (int32_t i = -T; i <= T; i++) {
@@ -79,7 +79,7 @@ void line(int32_t x1, int32_t x2, int32_t y1, int32_t y2, double t, std::functio
         double cosa{ (double)dx / length };
 
         // thickness of the line
-        int32_t T{ std::ceil(std::fabs(t - 1) / 2 + cosa) };
+        int32_t T{ static_cast<int32_t>(std::ceil(std::fabs(t - 1) / 2 + std::fabs(cosa))) };
 
         while (y <= y2) {
             for (int32_t i = -T; i <= T; i++) {

@@ -1,5 +1,6 @@
 #pragma once
 #include <array>
+#include <cassert>
 #include <functional>
 #include <stdexcept>
 
@@ -76,8 +77,8 @@ public:
     const T* data() const;
     Array2d<T>::Iterator begin();
     Array2d<T>::Iterator end();
-    Array2d<T>::ConstIterator cbegin() const;
-    Array2d<T>::ConstIterator cend() const;
+    Array2d<T>::ConstIterator begin() const;
+    Array2d<T>::ConstIterator end() const;
 };
 
 // Array2d
@@ -89,39 +90,19 @@ Array2d<T>::Array2d(size_t w, size_t h)
 {
 }
 
-#ifndef NDEBUG
 template<typename T>
 T& Array2d<T>::operator()(size_t x, size_t y)
 {
-    if (!is_in(x, y)) {
-        throw std::out_of_range("Array2d::operator()");
-    }
+    assert(is_in(x, y));
     return arr[x + y * w];
 }
-#else
-template<typename T>
-T& Array2d<T>::operator()(size_t x, size_t y)
-{
-    return arr[x + y * w];
-}
-#endif
 
-#ifndef NDEBUG
 template<typename T>
 const T& Array2d<T>::operator()(size_t x, size_t y) const
 {
-    if (!is_in(x, y)) {
-        throw std::out_of_range("Array2d::operator()");
-    }
+    assert(is_in(x, y));
     return arr[x + y * w];
 }
-#else
-template<typename T>
-const T& Array2d<T>::operator()(size_t x, size_t y) const
-{
-    return arr[x + y * w];
-}
-#endif
 
 template<typename T>
 bool Array2d<T>::is_in(size_t x, size_t y) const
@@ -172,13 +153,13 @@ typename Array2d<T>::Iterator Array2d<T>::end()
 }
 
 template<typename T>
-typename Array2d<T>::ConstIterator Array2d<T>::cbegin() const
+typename Array2d<T>::ConstIterator Array2d<T>::begin() const
 {
     return ConstIterator{ ConstElement{ arr.data(), 0, 0 }, w };
 }
 
 template<typename T>
-typename Array2d<T>::ConstIterator Array2d<T>::cend() const
+typename Array2d<T>::ConstIterator Array2d<T>::end() const
 {
     return ConstIterator{ ConstElement{ arr.data() + w * h, 0, h }, w };
 }
