@@ -12,18 +12,18 @@ StringColorSolver::StringColorSolver(const Img& full_img,
     , thread_pool{ thread_pool }
 {
     std::transform(
-        full_img->begin(), full_img->end(), target.begin(), [this](const Color& c) { return c.dist(this->color); });
+        full_img->cbegin(), full_img->cend(), target.begin(), [this](auto c) { return c->dist(this->color); });
 }
 
-void StringColorSolver::solve() {}
+void StringColorSolver::solve(int task_quota) {}
 
 Img StringColorSolver::get_img() const
 {
     if (!color_img.has_value()) {
         Img color_img_tmp(current.get_w(), current.get_h());
 
-        std::transform(current.begin(), current.end(), color_img_tmp->begin(), [this](float v) {
-            return Color(color.r(), color.g(), color.b(), v);
+        std::transform(current.cbegin(), current.cend(), color_img_tmp->begin(), [this](auto v) {
+            return Color(color.r(), color.g(), color.b(), *v);
         });
 
         color_img = std::make_optional(std::move(color_img_tmp));

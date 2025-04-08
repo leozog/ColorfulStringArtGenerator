@@ -3,9 +3,7 @@
 #include "img.h"
 #include "thread_pool.h"
 
-#include <algorithm> // For std::transform
 #include <optional>
-#include <utility>
 
 class StringColorSolver
 {
@@ -22,6 +20,6 @@ public:
                       const Color color,
                       const std::vector<Vec<double, 2>>& nail_positions,
                       ThreadPool& thread_pool);
-    void solve();
+    void solve(int task_quota);
     Img get_img() const;
 };

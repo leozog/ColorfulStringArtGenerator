@@ -1,11 +1,17 @@
 #include "line.h"
 
 #include <cmath>
+#include <cstdint>
 #include <functional>
-#include <stdint.h>
+
 
 // modified Gupta-Sproull algorithm
-void line(int32_t x1, int32_t x2, int32_t y1, int32_t y2, double t, std::function<void(int32_t, int32_t, double)> f)
+void line(int32_t x1,
+          int32_t x2,
+          int32_t y1,
+          int32_t y2,
+          double t,
+          const std::function<void(int32_t, int32_t, double)>& f)
 {
     int32_t dx{ x2 - x1 };
     int32_t dy{ y2 - y1 };

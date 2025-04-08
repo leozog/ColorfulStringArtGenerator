@@ -1,6 +1,5 @@
 #include "string_solver.h"
 #include "line.h"
-#include <numbers>
 
 StringSolver::StringSolver(const Array2d<float>& target,
                            Array2d<float>& current,
@@ -21,7 +20,8 @@ StringSolver::StringSolver(const Array2d<float>& target,
     , mse_delta(std::nullopt)
 {
     // start_pos = nail_positions[start_id / 2] +
-    //             Vec<double, 2>{ nail_radius * (start_id % 2 == 0 ? -1 : 1), 0 }.rotate(std::numbers::pi / 2);
+    //             Vec<double, 2>{ nail_radius * (start_id % 2 == 0 ? -1 : 1), 0
+    //             }.rotate(std::numbers::pi / 2);
 }
 
 void StringSolver::solve()
@@ -37,7 +37,7 @@ void StringSolver::solve()
 void StringSolver::draw()
 {
     line(start_pos[0], end_pos[0], start_pos[1], end_pos[1], line_thickness, [&](int32_t x, int32_t y, double d) {
-        current(x, y) = std::fmin(1.0, current(x, y) + line_function(d));
+        current(x, y) = static_cast<float>(std::fmin(1.0, current(x, y) + line_function(d)));
     });
 }
 
@@ -46,12 +46,12 @@ double StringSolver::get_mse_delta() const
     return mse_delta.value();
 }
 
-int32_t StringSolver::get_start_id() const
+uint32_t StringSolver::get_start_id() const
 {
     return start_id;
 }
 
-int32_t StringSolver::get_end_id() const
+uint32_t StringSolver::get_end_id() const
 {
     return end_id;
 }

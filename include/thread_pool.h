@@ -1,5 +1,4 @@
 #pragma once
-#include <cstdint>
 #include <functional>
 #include <future>
 #include <queue>
@@ -39,12 +38,12 @@ private:
     std::vector<std::jthread> threads;
 
 public:
-    ThreadPool(int n_threads);
-    ThreadPool();
+    constexpr static int MAX_N_THREADS = 0;
+    ThreadPool(unsigned int n_threads = MAX_N_THREADS);
     ~ThreadPool();
     template<class R, class... Args>
     std::future<R> submit(int priority, std::function<R(Args...)> f, Args&&... args);
-    int get_n_threads() const;
+    [[nodiscard]] unsigned int get_n_threads() const;
 
 private:
     void thread_loop(std::stop_token stop_token);

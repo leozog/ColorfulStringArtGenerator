@@ -1,14 +1,12 @@
+#include "array2d.h"
 #include "img.h"
 #include "line.h"
 #include "string_art_solver.h"
 #include "thread_pool.h"
 
-#include <chrono>
 #include <cmath>
 #include <iostream>
 #include <numbers>
-#include <syncstream>
-#include <thread>
 
 double string_fn(double d)
 {
@@ -35,11 +33,11 @@ int main(int argc, char* argv[])
         Img pic(pic_filename);
 
         // crop pic into circle
-        std::for_each(pic->begin(), pic->end(), [&pic](Array2d<Color>::Element a) {
-            double x{ a.get_x() - pic->get_w() / 2.0 };
-            double y{ a.get_y() - pic->get_h() / 2.0 };
+        std::for_each(pic->begin(), pic->end(), [&pic](auto a) {
+            double x{ static_cast<double>(a.get_x()) - static_cast<double>(pic->get_w()) / 2.0 };
+            double y{ static_cast<double>(a.get_y()) - static_cast<double>(pic->get_h()) / 2.0 };
             double r{ std::sqrt(x * x + y * y) };
-            if (r > pic->get_w() / 2.0) {
+            if (r > static_cast<double>(pic->get_w()) / 2.0) {
                 *a = Color(0, 0, 0);
             }
         });
@@ -71,7 +69,7 @@ int main(int argc, char* argv[])
 
         string_art_solver.solve();
     } catch (const char* err) {
-        std::cerr << err << std::endl;
+        std::cerr << err << '\n';
         return 1;
     }
 

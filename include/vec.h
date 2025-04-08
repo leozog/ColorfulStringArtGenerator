@@ -4,7 +4,6 @@
 #include <cassert>
 #include <cmath>
 #include <cstddef>
-#include <numeric>
 #include <stdexcept>
 #include <type_traits>
 
@@ -56,9 +55,9 @@ struct Vec
     double angle(const Vec& v) const;
     Vec<T, N> rotate(double angle) const
     requires(N == 2);
-    Vec<T, N> rotate(const Vec& axis, double angle) const
+    Vec<T, N> rotate(const Vec<T, N>& axis, double angle) const
     requires(N == 3);
-    Vec lerp(const Vec& v, double t) const;
+    Vec<T, N> lerp(const Vec<T, N>& v, double t) const;
 };
 
 template<typename T, std::size_t N>

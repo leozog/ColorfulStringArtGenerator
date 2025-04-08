@@ -1,23 +1,16 @@
 #include "thread_pool.h"
+#include <stop_token>
 
 // ThreadPool
-ThreadPool::ThreadPool(int n_threads)
+ThreadPool::ThreadPool(unsigned int n_threads)
 {
-    if (n_threads < -1 || n_threads == 0) {
-        throw std::invalid_argument("invalid number of threads: " + std::to_string(n_threads));
-    }
-    n_threads = n_threads == -1 ? std::thread::hardware_concurrency() : std::max<int>(1, n_threads);
+    n_threads = n_threads == MAX_N_THREADS ? std::thread::hardware_concurrency() : n_threads;
     {
         std::unique_lock<std::mutex> lock(tasks_mutex);
-        for (int i = 0; i < n_threads; i++) {
-            threads.emplace_back(std::jthread(&ThreadPool::thread_loop, this));
+        for (unsigned int i = 0; i < n_threads; i++) {
+            threads.emplace_back([this](std::stop_token stop_token) { thread_loop(std::move(stop_token)); });
         }
     }
-}
-
-ThreadPool::ThreadPool()
-    : ThreadPool(-1)
-{
 }
 
 ThreadPool::~ThreadPool()
@@ -28,9 +21,9 @@ ThreadPool::~ThreadPool()
     tasks_cv.notify_all();
 }
 
-int ThreadPool::get_n_threads() const
+unsigned int ThreadPool::get_n_threads() const
 {
-    return threads.size();
+    return static_cast<unsigned int>(threads.size());
 }
 
 void ThreadPool::thread_loop(std::stop_token stop_token)

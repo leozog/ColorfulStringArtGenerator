@@ -2,10 +2,7 @@
 #include "array2d.h"
 #include "vec.h"
 
-#include <limits>
-#include <stdint.h>
 #include <string>
-#include <type_traits>
 
 struct Color : public Vec<float, 4>
 {
@@ -32,10 +29,10 @@ private:
 
 public:
     Img(size_t w = 0, size_t h = 1);
-    Img(std::string path);
+    Img(const std::string& path);
     Array2d<Color>& operator*();
     Array2d<Color>* operator->();
     const Array2d<Color>& operator*() const;
     const Array2d<Color>* operator->() const;
-    void save(std::string path);
+    void save(const std::string& path);
 };
