@@ -60,6 +60,13 @@ struct Vec
     Vec<T, N> lerp(const Vec<T, N>& v, double t) const;
 };
 
+template<typename T>
+using Vec2 = Vec<T, 2>;
+template<typename T>
+using Vec3 = Vec<T, 3>;
+template<typename T>
+using Vec4 = Vec<T, 4>;
+
 template<typename T, std::size_t N>
 Vec<T, N>::Vec()
 {

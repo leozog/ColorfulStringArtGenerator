@@ -10,7 +10,17 @@
 
 double string_fn(double d)
 {
-    return std::max(std::min(1., 2. - d * 2.), 0.);
+    return std::max(std::min(1., 1. - d * 1.), 0.);
+}
+
+void crop_img_into_circle(Img& img)
+{
+    std::for_each(img->begin(), img->end(), [&img](auto a) {
+        Vec2<double> center{ static_cast<double>(img->get_w()) / 2.0, static_cast<double>(img->get_h()) / 2.0 };
+        Vec2<double> p{ static_cast<double>(a.get_x()), static_cast<double>(a.get_y()) };
+        double r{ p.dist(center) };
+        *a += Color(0.0, 0.0, 0.0, std::clamp(r - (static_cast<double>(img->get_w()) / 2.0), 0.0, 1.0));
+    });
 }
 
 int main(int argc, char* argv[])
@@ -32,22 +42,14 @@ int main(int argc, char* argv[])
 
         Img pic(pic_filename);
 
-        // crop pic into circle
-        std::for_each(pic->begin(), pic->end(), [&pic](auto a) {
-            double x{ static_cast<double>(a.get_x()) - static_cast<double>(pic->get_w()) / 2.0 };
-            double y{ static_cast<double>(a.get_y()) - static_cast<double>(pic->get_h()) / 2.0 };
-            double r{ std::sqrt(x * x + y * y) };
-            if (r > static_cast<double>(pic->get_w()) / 2.0) {
-                *a = Color(0, 0, 0);
-            }
-        });
+        crop_img_into_circle(pic);
 
         double D{ 1.0 };
         for (double a = 0; a < 2 * std::numbers::pi; a += 2 * std::numbers::pi / 32) {
-            line(pic->get_w() / 2,
-                 pic->get_w() / 2 + 140 * std::cos(a),
-                 pic->get_h() / 2,
-                 pic->get_h() / 2 + 140 * std::sin(a),
+            line(static_cast<double>(pic->get_w()) / 2.0,
+                 static_cast<double>(pic->get_w()) / 2.0 + 140 * std::cos(a),
+                 static_cast<double>(pic->get_h()) / 2.0,
+                 static_cast<double>(pic->get_h()) / 2.0 + 140 * std::sin(a),
                  D,
                  [&pic, D](int32_t x, int32_t y, double d) {
                      (*pic)(x, y) += Color(1., 0., 0., string_fn(std::fabs(d) / (D / 2)));
@@ -55,19 +57,21 @@ int main(int argc, char* argv[])
             D += 1.0;
         }
 
+        (*pic)(pic->get_w() / 2, pic->get_h() / 2) += Color(0., 1., 0., 1.0);
+
         pic.save("test.png");
 
-        ThreadPool tp;
+        // ThreadPool tp;
 
-        StringArtSolver string_art_solver =
-            StringArtSolver::Builder()
-                .set_input_img(std::move(pic))
-                .set_palette({ Color(1.0, 0.0, 0.0), Color(0.0, 1.0, 0.0), Color(0.0, 0.0, 1.0) })
-                .set_output_name("test2.png")
-                .set_thread_pool(tp)
-                .build();
+        // StringArtSolver string_art_solver =
+        //     StringArtSolver::Builder()
+        //         .set_input_img(std::move(pic))
+        //         .set_palette({ Color(1.0, 0.0, 0.0), Color(0.0, 1.0, 0.0), Color(0.0, 0.0, 1.0) })
+        //         .set_output_name("test2.png")
+        //         .set_thread_pool(tp)
+        //         .build();
 
-        string_art_solver.solve();
+        // string_art_solver.solve();
     } catch (const char* err) {
         std::cerr << err << '\n';
         return 1;

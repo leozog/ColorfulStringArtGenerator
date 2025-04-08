@@ -12,7 +12,7 @@ StringColorSolver::StringColorSolver(const Img& full_img,
     , thread_pool{ thread_pool }
 {
     std::transform(
-        full_img->cbegin(), full_img->cend(), target.begin(), [this](auto c) { return c->dist(this->color); });
+        full_img->cbegin(), full_img->cend(), target.begin(), [this](const auto c) { return c->dist(this->color); });
 }
 
 void StringColorSolver::solve(int task_quota) {}
@@ -22,7 +22,7 @@ Img StringColorSolver::get_img() const
     if (!color_img.has_value()) {
         Img color_img_tmp(current.get_w(), current.get_h());
 
-        std::transform(current.cbegin(), current.cend(), color_img_tmp->begin(), [this](auto v) {
+        std::transform(current.cbegin(), current.cend(), color_img_tmp->begin(), [this](const auto v) {
             return Color(color.r(), color.g(), color.b(), *v);
         });
 
