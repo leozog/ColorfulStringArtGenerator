@@ -17,9 +17,11 @@ private:
         friend class Array2d<T>;
 
         U* ptr;
-        size_t w, x, y;
+        size_t w;
+        size_t x, y;
+        size_t start_x, end_x;
 
-        IteratorBase(U* ptr, size_t w, size_t x, size_t y);
+        IteratorBase(U* ptr, size_t w, size_t start_x, size_t start_y, size_t end_x);
 
     public:
         class Element
@@ -58,6 +60,34 @@ public:
     using Iterator = Array2d<T>::IteratorBase<T>;
     using ConstIterator = Array2d<T>::IteratorBase<const T>;
 
+    class Region
+    {
+        friend class Array2d<T>;
+
+        Array2d<T>& arr;
+        const size_t start_x, start_y, end_x, end_y;
+
+        Region(Array2d<T>& arr, size_t start_x, size_t start_y, size_t end_x, size_t end_y);
+
+    public:
+        [[nodiscard]] Array2d<T>::Iterator begin();
+        [[nodiscard]] Array2d<T>::Iterator end();
+    };
+
+    class ConstRegion
+    {
+        friend class Array2d<T>;
+
+        const Array2d<T>& arr;
+        const size_t start_x, start_y, end_x, end_y;
+
+        ConstRegion(const Array2d<T>& arr, size_t start_x, size_t start_y, size_t end_x, size_t end_y);
+
+    public:
+        [[nodiscard]] Array2d<T>::ConstIterator cbegin() const;
+        [[nodiscard]] Array2d<T>::ConstIterator cend() const;
+    };
+
     Array2d(size_t w = 0, size_t h = 1);
     T& operator()(size_t x, size_t y);
     const T& operator()(size_t x, size_t y) const;
@@ -65,11 +95,14 @@ public:
     [[nodiscard]] size_t get_w() const;
     [[nodiscard]] size_t get_h() const;
     [[nodiscard]] size_t size() const;
+    [[nodiscard]] T* data();
     [[nodiscard]] const T* data() const;
     [[nodiscard]] Array2d<T>::Iterator begin();
     [[nodiscard]] Array2d<T>::ConstIterator cbegin() const;
     [[nodiscard]] Array2d<T>::Iterator end();
     [[nodiscard]] Array2d<T>::ConstIterator cend() const;
+    [[nodiscard]] Array2d<T>::Region get_region(size_t start_x, size_t start_y, size_t end_x, size_t end_y);
+    [[nodiscard]] Array2d<T>::ConstRegion get_cregion(size_t start_x, size_t start_y, size_t end_x, size_t end_y) const;
 };
 
 // Array2d
@@ -126,6 +159,12 @@ size_t Array2d<T>::size() const
 }
 
 template<typename T>
+T* Array2d<T>::data()
+{
+    return arr.data();
+}
+
+template<typename T>
 const T* Array2d<T>::data() const
 {
     return arr.data();
@@ -134,36 +173,53 @@ const T* Array2d<T>::data() const
 template<typename T>
 typename Array2d<T>::Iterator Array2d<T>::begin()
 {
-    return Iterator(arr.data(), w, 0, 0);
+    return Iterator(arr.data(), w, 0, 0, w);
 }
 
 template<typename T>
 typename Array2d<T>::ConstIterator Array2d<T>::cbegin() const
 {
-    return ConstIterator{ arr.data(), w, 0, 0 };
+    return ConstIterator{ arr.data(), w, 0, 0, w };
 }
 
 template<typename T>
 typename Array2d<T>::Iterator Array2d<T>::end()
 {
-    return Iterator{ arr.data() + w * h, w, 0, h };
+    return Iterator{ arr.data() + w * h, w, 0, h, w };
 }
 
 template<typename T>
 typename Array2d<T>::ConstIterator Array2d<T>::cend() const
 {
-    return ConstIterator{ arr.data() + w * h, w, 0, h };
+    return ConstIterator{ arr.data() + w * h, w, 0, h, w };
+}
+
+template<typename T>
+typename Array2d<T>::Region Array2d<T>::get_region(size_t start_x, size_t start_y, size_t end_x, size_t end_y)
+{
+    return Region(*this, start_x, start_y, end_x, end_y);
+}
+
+template<typename T>
+typename Array2d<T>::ConstRegion Array2d<T>::get_cregion(size_t start_x,
+                                                         size_t start_y,
+                                                         size_t end_x,
+                                                         size_t end_y) const
+{
+    return ConstRegion(*this, start_x, start_y, end_x, end_y);
 }
 // Array2d
 
 // Array2d::IteratorBase
 template<typename T>
 template<typename U>
-Array2d<T>::IteratorBase<U>::IteratorBase(U* ptr, size_t w, size_t x, size_t y)
+Array2d<T>::IteratorBase<U>::IteratorBase(U* ptr, size_t w, size_t start_x, size_t start_y, size_t end_x)
     : ptr{ ptr }
     , w{ w }
-    , x{ x }
-    , y{ y }
+    , x{ start_x }
+    , y{ start_y }
+    , start_x{ start_x }
+    , end_x{ end_x }
 {
 }
 
@@ -171,11 +227,12 @@ template<typename T>
 template<typename U>
 Array2d<T>::IteratorBase<U>& Array2d<T>::IteratorBase<U>::operator++()
 {
-    ++ptr;
-    if (x != w - 1) {
+    if (x != end_x - 1) {
+        ++ptr;
         ++x;
     } else {
-        x = 0;
+        ptr += w - (end_x - start_x) + 1;
+        x = start_x;
         ++y;
     }
     return *this;
@@ -279,3 +336,59 @@ size_t Array2d<T>::IteratorBase<U>::Element::get_y() const
     return y;
 }
 // Array2d::IteratorBase::Element
+
+// Array2d::Region
+template<typename T>
+Array2d<T>::Region::Region(Array2d<T>& arr, size_t start_x, size_t start_y, size_t end_x, size_t end_y)
+    : arr{ arr }
+    , start_x{ start_x }
+    , start_y{ start_y }
+    , end_x{ end_x }
+    , end_y{ end_y }
+{
+    assert(arr.is_in(start_x, start_y));
+    assert(arr.is_in(end_x - 1, end_y - 1));
+    assert(start_x < end_x);
+    assert(start_y < end_y);
+}
+
+template<typename T>
+typename Array2d<T>::Iterator Array2d<T>::Region::begin()
+{
+    return Iterator{ arr.data() + (start_x + start_y * arr.get_w()), arr.get_w(), start_x, start_y, end_x };
+}
+
+template<typename T>
+typename Array2d<T>::Iterator Array2d<T>::Region::end()
+{
+    return Iterator{ arr.data() + (start_x + end_y * arr.get_w()), arr.get_w(), start_x, end_y, end_x };
+}
+// Array2d::Region
+
+// Array2d::ConstRegion
+template<typename T>
+Array2d<T>::ConstRegion::ConstRegion(const Array2d<T>& arr, size_t start_x, size_t start_y, size_t end_x, size_t end_y)
+    : arr{ arr }
+    , start_x{ start_x }
+    , start_y{ start_y }
+    , end_x{ end_x }
+    , end_y{ end_y }
+{
+    assert(arr.is_in(start_x, start_y));
+    assert(arr.is_in(end_x - 1, end_y - 1));
+    assert(start_x < end_x);
+    assert(start_y < end_y);
+}
+
+template<typename T>
+typename Array2d<T>::ConstIterator Array2d<T>::ConstRegion::cbegin() const
+{
+    return ConstIterator{ arr.data() + (start_x + start_y * arr.get_w()), arr.get_w(), start_x, start_y, end_x };
+}
+
+template<typename T>
+typename Array2d<T>::ConstIterator Array2d<T>::ConstRegion::cend() const
+{
+    return ConstIterator{ arr.data() + (start_x + end_y * arr.get_w()), arr.get_w(), start_x, end_y, end_x };
+}
+// Array2d::ConstRegion

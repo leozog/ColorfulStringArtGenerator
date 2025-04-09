@@ -63,7 +63,7 @@ Img::Img(size_t w, size_t h)
 Img::Img(const std::string& path)
 {
     int w, h, n;
-    uint8_t* data = stbi_load(path.c_str(), &w, &h, &n, Color::CHANNELS);
+    uint8_t* data = stbi_load(path.c_str(), &w, &h, &n, Color::CHANNELS); // TODO: check if successful
     uint8_t* data_inerator = data;
     arr = Array2d<Color>(w, h);
     std::for_each(arr.begin(), arr.end(), [&data_inerator](auto a) {
@@ -105,7 +105,7 @@ void Img::save(const std::string& path)
         return static_cast<uint32_t>(clamped.r() * 255) | static_cast<uint32_t>(clamped.g() * 255) << 8 |
                static_cast<uint32_t>(clamped.b() * 255) << 16 | static_cast<uint32_t>(clamped.a() * 255) << 24;
     });
-    if (path.ends_with(".png")) {
+    if (path.ends_with(".png")) { // TODO: check if successful
         stbi_write_png(path.c_str(),
                        static_cast<int>(arr.get_w()),
                        static_cast<int>(arr.get_h()),
