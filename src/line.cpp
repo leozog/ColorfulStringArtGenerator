@@ -5,13 +5,13 @@
 #include <functional>
 
 // modified Gupta-Sproull algorithm
-void line(double x1, double x2, double y1, double y2, double t, const std::function<void(int32_t, int32_t, double)>& f)
+void line(double x1, double y1, double x2, double y2, double t, const std::function<void(int32_t, int32_t, double)>& f)
 {
     double dx{ x2 - x1 };
     double dy{ y2 - y1 };
 
     // Euclidean distance between points (x1, y1) and (x2, y2)
-    double length{ sqrt(dx * dx + dy * dy) };
+    double length{ sqrt((dx * dx) + (dy * dy)) };
     if (length == 0) {
         return;
     }
@@ -32,20 +32,20 @@ void line(double x1, double x2, double y1, double y2, double t, const std::funct
         int32_t di = dy > 0 ? 1 : -1;
         dx = std::abs(dx);
         dy = std::abs(dy);
-        double d = 2 * dy - dx; // discriminator
+        double d = (2 * dy) - dx; // discriminator
 
         // Euclidean distance of point (x,y) from line (signed)
         double D = std::round(y1) - y1;
 
-        double sina{ (double)dy / length };
-        double cosa{ (double)dx / length };
+        double sina{ dy / length };
+        double cosa{ dx / length };
 
         // thickness of the line
-        int32_t T{ static_cast<int32_t>(std::ceil(std::fabs(t + 1) / 2.0 + std::fabs(sina))) };
+        int32_t T{ static_cast<int32_t>(std::ceil((std::fabs(t + 1) / 2.0) + std::fabs(sina))) };
 
         while (x <= x2) {
             for (int32_t i = -T; i <= T; i++) {
-                f(static_cast<int>(std::round(x)), static_cast<int>(std::round(y + i)), D - di * i * cosa);
+                f(static_cast<int>(std::round(x)), static_cast<int>(std::round(y + i)), D - (di * i * cosa));
             }
             x = x + 1;
             if (d <= 0) {
@@ -73,20 +73,20 @@ void line(double x1, double x2, double y1, double y2, double t, const std::funct
         int32_t di = dx > 0 ? 1 : -1;
         dx = std::abs(dx);
         dy = std::abs(dy);
-        double d = 2 * dx - dy; // discriminator
+        double d = (2 * dx) - dy; // discriminator
 
         // Euclidean distance of point (x,y) from line (signed)
         double D = std::round(x1) - x1;
 
-        double sina{ (double)dy / length };
-        double cosa{ (double)dx / length };
+        double sina{ dy / length };
+        double cosa{ dx / length };
 
         // thickness of the line
-        int32_t T{ static_cast<int32_t>(std::ceil(std::fabs(t) / 2.0 + std::fabs(cosa))) };
+        int32_t T{ static_cast<int32_t>(std::ceil((std::fabs(t) / 2.0) + std::fabs(cosa))) };
 
         while (y <= y2) {
             for (int32_t i = -T; i <= T; i++) {
-                f(static_cast<int>(std::round(x + i)), static_cast<int>(std::round(y)), D - di * i * sina);
+                f(static_cast<int>(std::round(x + i)), static_cast<int>(std::round(y)), D - (di * i * sina));
             }
             y = y + 1;
             if (d <= 0) {
@@ -99,4 +99,12 @@ void line(double x1, double x2, double y1, double y2, double t, const std::funct
             }
         }
     }
+}
+
+void line(const Vec2<double>& p1,
+          const Vec2<double>& p2,
+          double t,
+          const std::function<void(int32_t, int32_t, double)>& f)
+{
+    line(p1[0], p1[1], p2[0], p2[1], t, f);
 }

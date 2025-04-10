@@ -12,10 +12,7 @@ StringArtSolver::StringArtSolver(Img&& input_img,
 }
 
 StringArtSolver::Builder::Builder()
-    : input_img{}
-    , palette{}
-    , output_name{ "" }
-    , thread_pool{ std::nullopt }
+    : thread_pool{ std::nullopt }
 {
 }
 
@@ -33,7 +30,7 @@ StringArtSolver StringArtSolver::Builder::build()
     if (!thread_pool.has_value()) {
         throw std::invalid_argument("thread pool is not set");
     }
-    return StringArtSolver(std::move(input_img), std::move(palette), std::move(output_name), thread_pool.value().get());
+    return { std::move(input_img), std::move(palette), std::move(output_name), thread_pool.value().get() };
 }
 
 StringArtSolver::Builder& StringArtSolver::Builder::set_input_img(Img&& input_img)

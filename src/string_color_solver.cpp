@@ -1,8 +1,8 @@
 #include "string_color_solver.h"
 
 StringColorSolver::StringColorSolver(const Img& full_img,
-                                     const Color color,
-                                     const std::vector<Vec<double, 2>>& nail_positions,
+                                     const Color& color,
+                                     const std::vector<Vec2<double>>& nail_positions,
                                      ThreadPool& thread_pool)
     : target(full_img->get_w(), full_img->get_h())
     , current(full_img->get_w(), full_img->get_h())

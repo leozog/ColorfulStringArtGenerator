@@ -22,7 +22,7 @@ Color::Color(int r, int g, int b, int a)
 
 Color Color::operator+(const Color& x) const
 {
-    double ao = x.a() + a() * (1. - x.a());
+    double ao = x.a() + (a() * (1. - x.a()));
     return { (x.r() * x.a() + r() * a() * (1 - x.a())) / ao,
              (x.g() * x.a() + g() * a() * (1 - x.a())) / ao,
              (x.b() * x.a() + b() * a() * (1 - x.a())) / ao,
@@ -67,10 +67,7 @@ Img::Img(const std::string& path)
     uint8_t* data_inerator = data;
     arr = Array2d<Color>(w, h);
     std::for_each(arr.begin(), arr.end(), [&data_inerator](auto a) {
-        *a = Color{ static_cast<uint8_t>(data_inerator[0]),
-                    static_cast<uint8_t>(data_inerator[1]),
-                    static_cast<uint8_t>(data_inerator[2]),
-                    static_cast<uint8_t>(data_inerator[3]) };
+        *a = Color{ data_inerator[0], data_inerator[1], data_inerator[2], data_inerator[3] };
         data_inerator += Color::CHANNELS;
     });
     stbi_image_free(data);

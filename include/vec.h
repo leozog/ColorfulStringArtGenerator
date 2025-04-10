@@ -34,6 +34,7 @@ struct Vec
     T& operator[](std::size_t index);
     const T& operator[](std::size_t index) const;
 
+    Vec operator-() const;
     Vec operator+(const Vec& v) const;
     Vec operator-(const Vec& v) const;
     Vec operator*(T s) const;
@@ -109,6 +110,16 @@ const T& Vec<T, N>::operator[](std::size_t index) const
 {
     assert(index < N && "Index out of bounds");
     return components[index];
+}
+
+template<typename T, std::size_t N>
+Vec<T, N> Vec<T, N>::operator-() const
+{
+    Vec<T, N> result;
+    for (std::size_t i = 0; i < N; ++i) {
+        result.components[i] = -components[i];
+    }
+    return result;
 }
 
 template<typename T, std::size_t N>
@@ -230,9 +241,9 @@ template<typename T, std::size_t N>
 Vec<T, N> Vec<T, N>::cross(const Vec<T, N>& v) const
 requires(N == 3)
 {
-    return Vec<T, N>{ components[1] * v.components[2] - components[2] * v.components[1],
-                      components[2] * v.components[0] - components[0] * v.components[2],
-                      components[0] * v.components[1] - components[1] * v.components[0] };
+    return Vec<T, N>{ (components[1] * v.components[2]) - (components[2] * v.components[1]),
+                      (components[2] * v.components[0]) - (components[0] * v.components[2]),
+                      (components[0] * v.components[1]) - (components[1] * v.components[0]) };
 }
 
 template<typename T, std::size_t N>
@@ -269,8 +280,8 @@ requires(N == 2)
 {
     double cos_angle = std::cos(angle);
     double sin_angle = std::sin(angle);
-    return Vec<T, N>{ components[0] * cos_angle - components[1] * sin_angle,
-                      components[0] * sin_angle + components[1] * cos_angle };
+    return Vec<T, N>{ (components[0] * cos_angle) - (components[1] * sin_angle),
+                      (components[0] * sin_angle) + (components[1] * cos_angle) };
 }
 
 template<typename T, std::size_t N>
@@ -279,11 +290,11 @@ requires(N == 3)
 {
     double cos_angle = std::cos(angle);
     double sin_angle = std::sin(angle);
-    return *this * cos_angle + axis.cross(*this) * sin_angle + axis * axis.dot(*this) * (1 - cos_angle);
+    return (*this * cos_angle) + (axis.cross(*this) * sin_angle) + (axis * axis.dot(*this) * (1 - cos_angle));
 }
 
 template<typename T, std::size_t N>
 Vec<T, N> Vec<T, N>::lerp(const Vec<T, N>& v, double t) const
 {
-    return *this + (v - *this) * t;
+    return *this + ((v - *this) * t);
 }

@@ -15,7 +15,7 @@
 
 double string_fn(double d)
 {
-    return std::max(std::min(1., 1. - d * 1.), 0.);
+    return std::max(std::min(1., 1. - (d * 1.)), 0.);
 }
 
 void draw_full_circle(Img& img, Vec2<double> center, double radius, Color color)
@@ -64,8 +64,9 @@ int main(int argc, char* argv[])
             }
         }
 
-        if (pic_filename.empty())
+        if (pic_filename.empty()) {
             throw "supply pic file name after -S";
+        }
 
         Img pic(pic_filename);
 

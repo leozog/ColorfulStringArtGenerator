@@ -14,8 +14,13 @@ private:
 
     public:
         AbstractTask(int priority);
-        virtual void run() = 0;
+        AbstractTask(const AbstractTask&) = delete;
+        AbstractTask& operator=(const AbstractTask&) = delete;
+        AbstractTask(AbstractTask&&) = delete;
+        AbstractTask& operator=(AbstractTask&&) = delete;
         virtual ~AbstractTask() = default;
+        [[nodiscard]] int get_priority() const { return priority; }
+        virtual void run() = 0;
         bool operator<(const AbstractTask& other) const;
     };
 
@@ -40,6 +45,10 @@ private:
 public:
     constexpr static int MAX_N_THREADS = 0;
     ThreadPool(unsigned int n_threads = MAX_N_THREADS);
+    ThreadPool(const ThreadPool&) = delete;
+    ThreadPool& operator=(const ThreadPool&) = delete;
+    ThreadPool(ThreadPool&&) = delete;
+    ThreadPool& operator=(ThreadPool&&) = delete;
     ~ThreadPool();
     template<class R, class... Args>
     std::future<R> submit(int priority, std::function<R(Args...)> f, Args&&... args);

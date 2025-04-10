@@ -6,7 +6,6 @@
 template<typename T>
 class Array2d
 {
-protected:
     size_t w, h;
     std::vector<T> arr;
 
@@ -118,14 +117,14 @@ template<typename T>
 T& Array2d<T>::operator()(size_t x, size_t y)
 {
     assert(is_in(x, y));
-    return arr[x + y * w];
+    return arr[x + (y * w)];
 }
 
 template<typename T>
 const T& Array2d<T>::operator()(size_t x, size_t y) const
 {
     assert(is_in(x, y));
-    return arr[x + y * w];
+    return arr[x + (y * w)];
 }
 
 template<typename T>
@@ -185,13 +184,13 @@ typename Array2d<T>::ConstIterator Array2d<T>::cbegin() const
 template<typename T>
 typename Array2d<T>::Iterator Array2d<T>::end()
 {
-    return Iterator{ arr.data() + w * h, w, 0, h, w };
+    return Iterator{ arr.data() + (w * h), w, 0, h, w };
 }
 
 template<typename T>
 typename Array2d<T>::ConstIterator Array2d<T>::cend() const
 {
-    return ConstIterator{ arr.data() + w * h, w, 0, h, w };
+    return ConstIterator{ arr.data() + (w * h), w, 0, h, w };
 }
 
 template<typename T>
