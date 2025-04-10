@@ -63,7 +63,10 @@ Img::Img(size_t w, size_t h)
 Img::Img(const std::string& path)
 {
     int w, h, n;
-    uint8_t* data = stbi_load(path.c_str(), &w, &h, &n, Color::CHANNELS); // TODO: check if successful
+    uint8_t* data = stbi_load(path.c_str(), &w, &h, &n, Color::CHANNELS);
+    if (data == nullptr) {
+        throw "failed to load image";
+    }
     uint8_t* data_inerator = data;
     arr = Array2d<Color>(w, h);
     std::for_each(arr.begin(), arr.end(), [&data_inerator](auto a) {
@@ -102,28 +105,32 @@ void Img::save(const std::string& path)
         return static_cast<uint32_t>(clamped.r() * 255) | static_cast<uint32_t>(clamped.g() * 255) << 8 |
                static_cast<uint32_t>(clamped.b() * 255) << 16 | static_cast<uint32_t>(clamped.a() * 255) << 24;
     });
-    if (path.ends_with(".png")) { // TODO: check if successful
-        stbi_write_png(path.c_str(),
-                       static_cast<int>(arr.get_w()),
-                       static_cast<int>(arr.get_h()),
-                       Color::CHANNELS,
-                       out_arr.data(),
-                       static_cast<int>(out_arr.get_w() * sizeof(uint32_t)));
+    int success = 0;
+    if (path.ends_with(".png")) {
+        success = stbi_write_png(path.c_str(),
+                                 static_cast<int>(arr.get_w()),
+                                 static_cast<int>(arr.get_h()),
+                                 Color::CHANNELS,
+                                 out_arr.data(),
+                                 static_cast<int>(out_arr.get_w() * sizeof(uint32_t)));
     } else if (path.ends_with(".bmp")) {
-        stbi_write_bmp(path.c_str(),
-                       static_cast<int>(arr.get_w()), //
-                       static_cast<int>(arr.get_h()),
-                       Color::CHANNELS,
-                       out_arr.data());
+        success = stbi_write_bmp(path.c_str(),
+                                 static_cast<int>(arr.get_w()), //
+                                 static_cast<int>(arr.get_h()),
+                                 Color::CHANNELS,
+                                 out_arr.data());
     } else if (path.ends_with(".jpg")) {
-        stbi_write_jpg(path.c_str(),
-                       static_cast<int>(arr.get_w()),
-                       static_cast<int>(arr.get_h()),
-                       Color::CHANNELS,
-                       out_arr.data(),
-                       95 /*quality*/);
+        success = stbi_write_jpg(path.c_str(),
+                                 static_cast<int>(arr.get_w()),
+                                 static_cast<int>(arr.get_h()),
+                                 Color::CHANNELS,
+                                 out_arr.data(),
+                                 95 /*quality*/);
     } else {
         throw "unsupported image output format";
+    }
+    if (success == 0) {
+        throw "failed to save image";
     }
 }
 // img
