@@ -37,7 +37,10 @@ private:
         std::future<R> get_future();
     };
 
-    std::priority_queue<std::shared_ptr<AbstractTask>> tasks;
+    std::priority_queue<std::shared_ptr<AbstractTask>,
+                        std::vector<std::shared_ptr<AbstractTask>>,
+                        std::function<bool(const std::shared_ptr<AbstractTask>&, const std::shared_ptr<AbstractTask>&)>>
+        tasks;
     std::mutex tasks_mutex;
     std::condition_variable tasks_cv;
     std::vector<std::jthread> threads;
@@ -51,7 +54,7 @@ public:
     ThreadPool& operator=(ThreadPool&&) = delete;
     ~ThreadPool();
     template<class R, class... Args>
-    std::future<R> submit(int priority, std::function<R(Args...)> f, Args&&... args);
+    std::future<R> submit(int priority, std::function<R(Args...)> func, Args&&... args);
     [[nodiscard]] unsigned int get_n_threads() const;
 
 private:
@@ -60,15 +63,15 @@ private:
 
 // ThreadPool
 template<class R, class... Args>
-std::future<R> ThreadPool::submit(int priority, std::function<R(Args...)> f, Args&&... args)
+std::future<R> ThreadPool::submit(int priority, std::function<R(Args...)> func, Args&&... args)
 {
-    auto t = std::make_shared<Task<R, Args...>>(priority, f, std::forward<Args>(args)...);
+    auto t = std::make_shared<Task<R, Args...>>(priority, func, std::forward<Args>(args)...);
     auto fut = t->get_future();
     {
         std::unique_lock<std::mutex> lock(tasks_mutex);
         tasks.push(std::move(t));
-        tasks_cv.notify_one();
     }
+    tasks_cv.notify_one();
     return fut;
 }
 // ThreadPool
@@ -85,11 +88,15 @@ ThreadPool::Task<R, Args...>::Task(int priority, std::function<R(Args...)> func,
 template<class R, class... Args>
 void ThreadPool::Task<R, Args...>::run()
 {
-    if constexpr (std::is_void_v<R>) {
-        std::apply(func, args);
-        promise.set_value();
-    } else {
-        promise.set_value(std::apply(func, args));
+    try {
+        if constexpr (std::is_void_v<R>) {
+            std::apply(func, args);
+            promise.set_value();
+        } else {
+            promise.set_value(std::move(std::apply(func, args)));
+        }
+    } catch (...) {
+        promise.set_exception(std::current_exception());
     }
 }
 

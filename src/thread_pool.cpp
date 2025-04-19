@@ -3,6 +3,9 @@
 
 // ThreadPool
 ThreadPool::ThreadPool(unsigned int n_threads)
+    : tasks([](const std::shared_ptr<AbstractTask>& a, const std::shared_ptr<AbstractTask>& b) {
+        return a->get_priority() < b->get_priority();
+    })
 {
     n_threads = n_threads == MAX_N_THREADS ? std::thread::hardware_concurrency() : n_threads;
     {
@@ -19,6 +22,11 @@ ThreadPool::~ThreadPool()
         t.request_stop();
     }
     tasks_cv.notify_all();
+    for (auto& thread : threads) {
+        if (thread.joinable()) {
+            thread.join();
+        }
+    }
 }
 
 unsigned int ThreadPool::get_n_threads() const
