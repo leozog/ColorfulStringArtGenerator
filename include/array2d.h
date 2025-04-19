@@ -11,81 +11,14 @@ class Array2d
 
 private:
     template<typename U>
-    class IteratorBase
-    {
-        friend class Array2d<T>;
-
-        U* ptr;
-        size_t w;
-        size_t x, y;
-        size_t start_x, end_x;
-
-        IteratorBase(U* ptr, size_t w, size_t start_x, size_t start_y, size_t end_x);
-
-    public:
-        class Element
-        {
-            friend class Array2d<T>::IteratorBase<U>;
-
-            U* const ptr;
-            const size_t x, y;
-
-            Element(U* ptr, size_t x, size_t y);
-
-        public:
-            Element& operator=(const U& u);
-            Element& operator=(U&& u);
-            U& operator*() const;
-            U* operator->() const;
-            [[nodiscard]] size_t get_x() const;
-            [[nodiscard]] size_t get_y() const;
-        };
-
-        using iterator_category = std::forward_iterator_tag;
-        using difference_type = std::ptrdiff_t;
-        using value_type = U;
-        using pointer = Element;
-        using reference = Element;
-
-        IteratorBase<U>& operator++();
-        IteratorBase<U> operator++(int);
-        bool operator==(const IteratorBase<U>& other) const;
-        bool operator!=(const IteratorBase<U>& other) const;
-        reference operator*() const;
-        pointer operator->() const;
-    };
+    class IteratorBase;
 
 public:
     using Iterator = Array2d<T>::IteratorBase<T>;
     using ConstIterator = Array2d<T>::IteratorBase<const T>;
 
-    class Region
-    {
-        friend class Array2d<T>;
-
-        Array2d<T>& arr;
-        const size_t start_x, start_y, end_x, end_y;
-
-        Region(Array2d<T>& arr, size_t start_x, size_t start_y, size_t end_x, size_t end_y);
-
-    public:
-        [[nodiscard]] Array2d<T>::Iterator begin();
-        [[nodiscard]] Array2d<T>::Iterator end();
-    };
-
-    class ConstRegion
-    {
-        friend class Array2d<T>;
-
-        const Array2d<T>& arr;
-        const size_t start_x, start_y, end_x, end_y;
-
-        ConstRegion(const Array2d<T>& arr, size_t start_x, size_t start_y, size_t end_x, size_t end_y);
-
-    public:
-        [[nodiscard]] Array2d<T>::ConstIterator cbegin() const;
-        [[nodiscard]] Array2d<T>::ConstIterator cend() const;
-    };
+    class Region;
+    class ConstRegion;
 
     Array2d(size_t w = 0, size_t h = 1);
     T& operator()(size_t x, size_t y);
@@ -102,6 +35,82 @@ public:
     [[nodiscard]] Array2d<T>::ConstIterator cend() const;
     [[nodiscard]] Array2d<T>::Region get_region(size_t start_x, size_t start_y, size_t end_x, size_t end_y);
     [[nodiscard]] Array2d<T>::ConstRegion get_cregion(size_t start_x, size_t start_y, size_t end_x, size_t end_y) const;
+};
+
+template<typename T>
+template<typename U>
+class Array2d<T>::IteratorBase
+{
+    friend class Array2d<T>;
+
+    U* ptr;
+    size_t w;
+    size_t x, y;
+    size_t start_x, end_x;
+
+    IteratorBase(U* ptr, size_t w, size_t start_x, size_t start_y, size_t end_x);
+
+public:
+    class Element
+    {
+        friend class Array2d<T>::IteratorBase<U>;
+
+        U* const ptr;
+        const size_t x, y;
+
+        Element(U* ptr, size_t x, size_t y);
+
+    public:
+        Element& operator=(const U& u);
+        Element& operator=(U&& u);
+        U& operator*() const;
+        U* operator->() const;
+        [[nodiscard]] size_t get_x() const;
+        [[nodiscard]] size_t get_y() const;
+    };
+
+    using iterator_category = std::forward_iterator_tag;
+    using difference_type = std::ptrdiff_t;
+    using value_type = U;
+    using pointer = Element;
+    using reference = Element;
+
+    IteratorBase<U>& operator++();
+    IteratorBase<U> operator++(int);
+    bool operator==(const IteratorBase<U>& other) const;
+    bool operator!=(const IteratorBase<U>& other) const;
+    reference operator*() const;
+    pointer operator->() const;
+};
+
+template<typename T>
+class Array2d<T>::Region
+{
+    friend class Array2d<T>;
+
+    Array2d<T>& arr;
+    const size_t start_x, start_y, end_x, end_y;
+
+    Region(Array2d<T>& arr, size_t start_x, size_t start_y, size_t end_x, size_t end_y);
+
+public:
+    [[nodiscard]] Array2d<T>::Iterator begin();
+    [[nodiscard]] Array2d<T>::Iterator end();
+};
+
+template<typename T>
+class Array2d<T>::ConstRegion
+{
+    friend class Array2d<T>;
+
+    const Array2d<T>& arr;
+    const size_t start_x, start_y, end_x, end_y;
+
+    ConstRegion(const Array2d<T>& arr, size_t start_x, size_t start_y, size_t end_x, size_t end_y);
+
+public:
+    [[nodiscard]] Array2d<T>::ConstIterator cbegin() const;
+    [[nodiscard]] Array2d<T>::ConstIterator cend() const;
 };
 
 // Array2d
@@ -345,10 +354,10 @@ Array2d<T>::Region::Region(Array2d<T>& arr, size_t start_x, size_t start_y, size
     , end_x{ end_x }
     , end_y{ end_y }
 {
-    assert(arr.is_in(start_x, start_y));
-    assert(arr.is_in(end_x - 1, end_y - 1));
     assert(start_x < end_x);
     assert(start_y < end_y);
+    assert(arr.is_in(start_x, start_y));
+    assert(arr.is_in(end_x - 1, end_y - 1));
 }
 
 template<typename T>
@@ -373,10 +382,10 @@ Array2d<T>::ConstRegion::ConstRegion(const Array2d<T>& arr, size_t start_x, size
     , end_x{ end_x }
     , end_y{ end_y }
 {
-    assert(arr.is_in(start_x, start_y));
-    assert(arr.is_in(end_x - 1, end_y - 1));
     assert(start_x < end_x);
     assert(start_y < end_y);
+    assert(arr.is_in(start_x, start_y));
+    assert(arr.is_in(end_x - 1, end_y - 1));
 }
 
 template<typename T>
