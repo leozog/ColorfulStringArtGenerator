@@ -3,55 +3,48 @@
 
 StringSolver::StringSolver(const Array2d<float>& target,
                            Array2d<float>& current,
-                           const std::function<double(double)>& line_function,
-                           const double line_thickness,
-                           const std::vector<Vec<double, 2>>& nail_positions,
-                           const double nail_radius,
-                           const uint32_t start_id,
-                           const uint32_t end_id)
+                           const double string_radius,
+                           const StringLine&& string_line)
     : target(target)
     , current(current)
-    , line_function(line_function)
-    , line_thickness(line_thickness)
-    , nail_positions(nail_positions)
-    , nail_radius(nail_radius)
-    , start_id(start_id)
-    , end_id(end_id)
+    , string_radius(string_radius)
+    , string_line(string_line)
     , mse_delta(std::nullopt)
 {
-    // start_pos = nail_positions[start_id / 2] +
-    //             Vec<double, 2>{ nail_radius * (start_id % 2 == 0 ? -1 : 1), 0
-    //             }.rotate(std::numbers::pi / 2);
 }
 
 void StringSolver::solve()
 {
     double mse_delta_tmp{ 0.0 };
-    line(start_pos[0], end_pos[0], start_pos[1], end_pos[1], line_thickness, [&](int32_t x, int32_t y, double d) {
-        mse_delta_tmp += std::pow(std::fmin(1.0, line_function(d) + current(x, y)) - target(x, y), 2) -
-                         std::pow(current(x, y) - target(x, y), 2);
+    line(string_line.get_start_pos(), string_line.get_end_pos(), string_radius, [&](int32_t x, int32_t y, double d) {
+        if (target.is_in(x, y)) {
+            mse_delta_tmp += std::pow(std::fmin(1.0, string_function(d) + current(x, y)) - target(x, y), 2) -
+                             std::pow(current(x, y) - target(x, y), 2);
+        }
     });
     mse_delta = mse_delta_tmp;
 }
 
 void StringSolver::draw()
 {
-    line(start_pos[0], end_pos[0], start_pos[1], end_pos[1], line_thickness, [&](int32_t x, int32_t y, double d) {
-        current(x, y) = static_cast<float>(std::fmin(1.0, current(x, y) + line_function(d)));
+    line(string_line.get_start_pos(), string_line.get_end_pos(), string_radius, [&](int32_t x, int32_t y, double d) {
+        if (current.is_in(x, y)) {
+            current(x, y) = static_cast<float>(std::fmin(1.0, current(x, y) + string_function(d)));
+        }
     });
+}
+
+double StringSolver::string_function(double d) const
+{
+    return (1.0 - std::fmin(1.0, d * d / string_radius)) * 0.20;
+}
+
+StringLine StringSolver::get_string_line() const
+{
+    return string_line;
 }
 
 double StringSolver::get_mse_delta() const
 {
     return mse_delta.value();
-}
-
-uint32_t StringSolver::get_start_id() const
-{
-    return start_id;
-}
-
-uint32_t StringSolver::get_end_id() const
-{
-    return end_id;
 }
