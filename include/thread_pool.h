@@ -1,7 +1,8 @@
 #pragma once
+#include "priority_queue.h"
 #include <functional>
 #include <future>
-#include <queue>
+#include <memory>
 #include <thread>
 #include <vector>
 
@@ -10,14 +11,14 @@ class ThreadPool
 private:
     class AbstractTask
     {
-        const int priority;
+        int priority;
 
     public:
         AbstractTask(int priority);
         AbstractTask(const AbstractTask&) = delete;
         AbstractTask& operator=(const AbstractTask&) = delete;
-        AbstractTask(AbstractTask&&) = delete;
-        AbstractTask& operator=(AbstractTask&&) = delete;
+        AbstractTask(AbstractTask&&) = default;
+        AbstractTask& operator=(AbstractTask&&) = default;
         virtual ~AbstractTask() = default;
         [[nodiscard]] int get_priority() const { return priority; }
         virtual void run() = 0;
@@ -37,9 +38,9 @@ private:
         std::future<R> get_future();
     };
 
-    std::priority_queue<std::shared_ptr<AbstractTask>,
-                        std::vector<std::shared_ptr<AbstractTask>>,
-                        std::function<bool(const std::shared_ptr<AbstractTask>&, const std::shared_ptr<AbstractTask>&)>>
+    PriorityQueue<std::unique_ptr<AbstractTask>,
+                  std::vector<std::unique_ptr<AbstractTask>>,
+                  std::function<bool(const std::unique_ptr<AbstractTask>&, const std::unique_ptr<AbstractTask>&)>>
         tasks;
     std::mutex tasks_mutex;
     std::condition_variable tasks_cv;
@@ -65,7 +66,7 @@ private:
 template<class R, class... Args>
 std::future<R> ThreadPool::submit(int priority, std::function<R(Args...)> func, Args&&... args)
 {
-    auto t = std::make_shared<Task<R, Args...>>(priority, func, std::forward<Args>(args)...);
+    auto t = std::make_unique<Task<R, Args...>>(priority, func, std::forward<Args>(args)...);
     auto fut = t->get_future();
     {
         std::unique_lock<std::mutex> lock(tasks_mutex);

@@ -3,7 +3,7 @@
 
 // ThreadPool
 ThreadPool::ThreadPool(unsigned int n_threads)
-    : tasks([](const std::shared_ptr<AbstractTask>& a, const std::shared_ptr<AbstractTask>& b) {
+    : tasks([](const std::unique_ptr<AbstractTask>& a, const std::unique_ptr<AbstractTask>& b) {
         return a->get_priority() < b->get_priority();
     })
 {
@@ -37,15 +37,14 @@ unsigned int ThreadPool::get_n_threads() const
 void ThreadPool::thread_loop(std::stop_token stop_token)
 {
     while (!stop_token.stop_requested()) {
-        std::shared_ptr<AbstractTask> t;
+        std::unique_ptr<AbstractTask> t;
         {
             std::unique_lock<std::mutex> lock(tasks_mutex);
             tasks_cv.wait(lock, [this, &stop_token] { return stop_token.stop_requested() || !tasks.empty(); });
             if (stop_token.stop_requested() || tasks.empty()) {
                 continue;
             }
-            t = tasks.top();
-            tasks.pop();
+            t = std::move(tasks.top_pop());
         }
         t->run();
     }
