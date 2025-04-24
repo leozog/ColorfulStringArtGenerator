@@ -11,26 +11,46 @@
 #include <cstdlib>
 #include <functional>
 #include <sys/stat.h>
+#include <unordered_map>
 #include <vector>
 
-ImageColorQuantizer::ImageColorQuantizer(const Img& img, const Array2d<uint8_t>& mask, ThreadPool& thread_pool)
+ImageColorQuantizer::ImageColorQuantizer(const Img& img,
+                                         ThreadPool& thread_pool,
+                                         const std::optional<Array2d<uint8_t>>& mask)
     : thread_pool{ thread_pool }
 {
-    assert(img.get_w() == mask.get_w());
-    assert(img.get_h() == mask.get_h());
-    colors.reserve(img.get_w() * img.get_h());
-    std::for_each(img.cbegin(), img.cend(), [&](const auto color) {
-        if (mask(color.get_x(), color.get_y())) {
-            colors[*color]++;
-        }
-    });
-}
+    if (mask) {
+        assert(img.get_w() == mask->get_w());
+        assert(img.get_h() == mask->get_h());
+    }
 
-ImageColorQuantizer::ImageColorQuantizer(const Img& img, ThreadPool& thread_pool)
-    : thread_pool{ thread_pool }
-{
-    colors.reserve(img.get_w() * img.get_h());
-    std::for_each(img.cbegin(), img.cend(), [&](const auto color) { colors[*color]++; });
+    uint32_t n_threads = thread_pool.get_n_threads();
+    uint32_t rows_per_task = img.get_h() / n_threads;
+
+    std::function<std::unordered_map<Color, size_t>(Img::ConstRegion)> f = [&](Img::ConstRegion region) {
+        std::unordered_map<Color, size_t> task_colors;
+        task_colors.reserve(rows_per_task * img.get_w() / 2);
+        std::for_each(region.cbegin(), region.cend(), [&](const auto& color) {
+            if (!mask || (*mask)(color.get_x(), color.get_y())) {
+                task_colors[*color]++;
+            }
+        });
+        return task_colors;
+    };
+
+    std::vector<std::future<std::unordered_map<Color, size_t>>> futures;
+    futures.reserve(n_threads);
+    for (size_t y_start = 0; y_start < img.get_h(); y_start += rows_per_task) {
+        size_t y_end = std::min(y_start + rows_per_task, img.get_h());
+        futures.push_back(thread_pool.submit(1, f, img.get_cregion(0, y_start, img.get_w(), y_end)));
+    }
+
+    for (auto& f : futures) {
+        auto task_colors = f.get();
+        for (const auto& [color, count] : task_colors) {
+            colors[color] += count;
+        }
+    }
 }
 
 std::vector<Color> ImageColorQuantizer::get_pallete(uint32_t n_colors,
