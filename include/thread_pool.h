@@ -55,7 +55,7 @@ public:
     ThreadPool& operator=(ThreadPool&&) = delete;
     ~ThreadPool();
     template<class R, class... Args>
-    std::future<R> submit(int priority, std::function<R(Args...)> func, Args&&... args);
+    std::future<R> submit(int priority, std::function<R(Args...)> func, Args... args);
     [[nodiscard]] unsigned int get_n_threads() const;
 
 private:
@@ -64,7 +64,7 @@ private:
 
 // ThreadPool
 template<class R, class... Args>
-std::future<R> ThreadPool::submit(int priority, std::function<R(Args...)> func, Args&&... args)
+std::future<R> ThreadPool::submit(int priority, std::function<R(Args...)> func, Args... args)
 {
     auto t = std::make_unique<Task<R, Args...>>(priority, func, std::forward<Args>(args)...);
     auto fut = t->get_future();
