@@ -1,5 +1,6 @@
 #pragma once
 #include <chrono>
+#include <cstdio>
 #include <mutex>
 #include <print>
 
@@ -36,13 +37,13 @@ constexpr const char* Logger::log_level_str(LogLevel level)
 {
     switch (level) {
         case LogLevel::INFO:
-            return "[{} ms] {}";
+            return "[ {} ms ] {}";
         case LogLevel::WARN:
-            return "[{} ms] \033[33mWARN\033[0m: {}"; // Yellow
+            return "[ {} ms ] \033[33mWARNING\033[0m: {}"; // Yellow
         case LogLevel::ERROR:
-            return "[{} ms] \033[31mERROR\033[0m: {}"; // Red
+            return "[ {} ms ] \033[31mERROR\033[0m: {}"; // Red
         case LogLevel::DEBUG:
-            return "[{} ms] \033[90mDEBUG\033[0m: {}"; // Gray
+            return "[ {} ms ] \033[90mDEBUG\033[0m: {}"; // Gray
     }
     std::unreachable();
 }
@@ -61,7 +62,11 @@ void Logger::log(const std::format_string<Args...> format, Args&&... args)
     auto elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now_time - start_time).count();
 
     std::string formatted_msg = std::format(format, std::forward<Args>(args)...);
-    std::println(log_level_str(LOG_LEVEL), elapsed_ms, formatted_msg);
+    if constexpr (LOG_LEVEL == LogLevel::ERROR) {
+        std::println(stderr, log_level_str(LOG_LEVEL), elapsed_ms, formatted_msg);
+    } else {
+        std::println(log_level_str(LOG_LEVEL), elapsed_ms, formatted_msg);
+    }
 }
 
 template<typename... Args>
