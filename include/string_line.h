@@ -37,4 +37,5 @@ public:
     [[nodiscard]] nail_id_t get_end_nail_id() const;
     [[nodiscard]] Wrap get_end_wrap() const;
     [[nodiscard]] Vec2<double> get_end_pos() const;
+    [[nodiscard]] double get_length() const;
 };

@@ -69,3 +69,8 @@ Vec2<double> StringLine::get_end_pos() const
 {
     return end_pos;
 }
+
+double StringLine::get_length() const
+{
+    return start_pos.dist(end_pos);
+}

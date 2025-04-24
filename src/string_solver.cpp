@@ -15,6 +15,12 @@ StringSolver::StringSolver(const Array2d<float>& target,
 
 void StringSolver::solve()
 {
+    const double min_string_length{ 100.0 }; // TODO: make this a parameter
+    if (string_line.get_length() < min_string_length) {
+        mse_delta = std::numeric_limits<double>::max();
+        return;
+    }
+
     double mse_delta_tmp{ 0.0 };
     line(string_line.get_start_pos(), string_line.get_end_pos(), string_radius, [&](int32_t x, int32_t y, double d) {
         if (target.is_in(x, y)) {
