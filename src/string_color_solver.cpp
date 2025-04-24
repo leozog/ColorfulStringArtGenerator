@@ -6,6 +6,7 @@
 #include "vec.h"
 #include <functional>
 #include <iterator>
+#include <memory>
 #include <vector>
 
 StringColorSolver::StringColorSolver(const Img& full_img,
@@ -27,14 +28,14 @@ StringColorSolver::StringColorSolver(const Img& full_img,
     constexpr double max_dist = Vec3<double>{ 1.0, 1.0, 1.0 }.len();
     std::transform(full_img.cbegin(), full_img.cend(), target.begin(), [&color, &background_color](const auto c) {
         return std::clamp(
-            std::pow(c->dist(background_color) / max_dist, 0.10) - std::pow(c->dist(color) / max_dist, 0.5), 0.0, 1.0);
+            std::pow(c->dist(background_color) / max_dist, 0.1) - std::pow(c->dist(color) / max_dist, 0.3), 0.0, 1.0);
     });
 }
 
 void StringColorSolver::solve()
 {
-    sequence.clear();
-    int max_iterations{ 10000 };
+    sequence = std::make_unique<std::vector<StringLine>>();
+    int max_iterations{ 1000 };
     for (int i = 0; i < max_iterations; ++i) {
         double mse_delta = solve_step();
         Logger::debug("MSE delta: {}", mse_delta);
@@ -47,8 +48,20 @@ void StringColorSolver::solve()
 
 double StringColorSolver::solve_step()
 {
-    nail_id_t last_nail_id{ sequence.empty() ? 0 : sequence.back().get_end_nail_id() };
-    StringLine::Wrap last_wrap{ sequence.empty() ? StringLine::Wrap::CLOKWISE : sequence.back().get_end_wrap() };
+    nail_id_t last_nail_id{ sequence->empty() ? 0 : sequence->back().get_end_nail_id() };
+    StringLine::Wrap last_wrap{ sequence->empty() ? StringLine::Wrap::CLOKWISE : sequence->back().get_end_wrap() };
+
+    std::function<StringSolver(nail_id_t, StringLine::Wrap)> f =
+        [this, last_nail_id, last_wrap](nail_id_t next_nail_id, StringLine::Wrap next_wrap) {
+            StringSolver solver{
+                target,
+                current,
+                string_radius,
+                StringLine(nail_positions, nail_radius, string_radius, last_nail_id, last_wrap, next_nail_id, next_wrap)
+            };
+            solver.solve();
+            return solver;
+        };
 
     std::vector<std::future<StringSolver>> futures;
     futures.reserve(2 * (nail_positions.size() - 1));
@@ -57,18 +70,7 @@ double StringColorSolver::solve_step()
             continue;
         }
         for (auto next_wrap : { StringLine::Wrap::CLOKWISE, StringLine::Wrap::ANTICLOCKWISE }) {
-            std::function<StringSolver(void)> f = [this, next_nail_id, next_wrap, last_nail_id, last_wrap]() {
-                StringSolver solver{
-                    target,
-                    current,
-                    string_radius,
-                    StringLine(
-                        nail_positions, nail_radius, string_radius, last_nail_id, last_wrap, next_nail_id, next_wrap)
-                };
-                solver.solve();
-                return solver;
-            };
-            futures.push_back(std::move(thread_pool.submit(1, f)));
+            futures.push_back(std::move(thread_pool.submit(1, f, next_nail_id, next_wrap)));
         }
     }
 
@@ -82,7 +84,7 @@ double StringColorSolver::solve_step()
         return a.get_mse_delta() < b.get_mse_delta();
     });
 
-    sequence.push_back(best_solver->get_string_line());
+    sequence->push_back(best_solver->get_string_line());
 
     color_img.reset();
     best_solver->draw();
@@ -90,12 +92,12 @@ double StringColorSolver::solve_step()
     return best_solver->get_mse_delta();
 }
 
-std::vector<StringLine> StringColorSolver::get_sequence() const
+std::unique_ptr<std::vector<StringLine>> StringColorSolver::get_sequence()
 {
-    return sequence;
+    return std::move(sequence);
 }
 
-Img StringColorSolver::get_img() const
+Img& StringColorSolver::get_img() const
 {
     if (!color_img.has_value()) {
         Img color_img_tmp(current.get_w(), current.get_h());

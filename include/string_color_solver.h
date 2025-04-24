@@ -4,6 +4,7 @@
 #include "string_line.h"
 #include "thread_pool.h"
 
+#include <memory>
 #include <optional>
 #include <vector>
 
@@ -17,7 +18,7 @@ private:
     const double string_radius;
     const Color color;
     ThreadPool& thread_pool;
-    std::vector<StringLine> sequence;
+    std::unique_ptr<std::vector<StringLine>> sequence;
     mutable std::optional<Img> color_img;
 
 public:
@@ -30,6 +31,6 @@ public:
                       ThreadPool& thread_pool);
     void solve();
     double solve_step();
-    std::vector<StringLine> get_sequence() const;
-    Img get_img() const;
+    std::unique_ptr<std::vector<StringLine>> get_sequence();
+    Img& get_img() const;
 };

@@ -1,9 +1,10 @@
 #pragma once
 #include "img.h"
-#include "string_line.h"
+#include "string_sequence.h"
 #include "thread_pool.h"
 
 #include <functional>
+#include <memory>
 #include <vector>
 
 class StringArtSolver
@@ -17,8 +18,8 @@ private:
     const double string_radius;
     ThreadPool& thread_pool;
     const std::vector<Vec2<double>> nail_positions;
-    std::vector<StringLine> sequence;
-    Img output_img;
+    std::unique_ptr<StringSequence> sequence;
+    std::unique_ptr<Img> output_img;
 
     StringArtSolver(Img&& target_img,
                     std::vector<Color>&& palette,
@@ -34,8 +35,8 @@ public:
     class Builder;
 
     void solve();
-    [[nodiscard]] std::vector<StringLine> get_sequence() const;
-    [[nodiscard]] Img get_img() const;
+    [[nodiscard]] std::unique_ptr<StringSequence> get_sequence();
+    [[nodiscard]] std::unique_ptr<Img> get_img();
 
     const std::vector<Vec2<double>>& get_nail_positions();
     double get_nail_radius_px() const;

@@ -1,11 +1,13 @@
 #include "string_art_solver.h"
-#include "img.h"
 #include "logger.h"
 #include "string_color_solver.h"
+#include "string_sequence.h"
 #include "vec.h"
 
 #include <cstdint>
+#include <memory>
 #include <numbers>
+#include <utility>
 #include <vector>
 
 StringArtSolver::StringArtSolver(Img&& target_img,
@@ -32,26 +34,27 @@ StringArtSolver::StringArtSolver(Img&& target_img,
 
 void StringArtSolver::solve()
 {
-    output_img = Img(target_img.get_w(), target_img.get_h(), background_color);
+    sequence = std::make_unique<StringSequence>();
+    output_img = std::make_unique<Img>(target_img.get_w(), target_img.get_h(), background_color);
     for (const Color& color : palette) {
-        Logger::info("Solving for color: ( {}, {}, {} )", color.r(), color.g(), color.b());
+        Logger::info(
+            "Solving for color: ( {:.0f}, {:.0f}, {:.0f} )", 255 * color.r(), 255 * color.g(), 255 * color.b());
         StringColorSolver solver{ target_img, background_color, nail_positions, nail_radius, string_radius,
                                   color,      thread_pool };
         solver.solve();
-        output_img += solver.get_img();
+        sequence->add(color, std::move(solver.get_sequence()));
+        *output_img += solver.get_img();
     }
-
-    // sequence = solver.get_sequence();
 }
 
-std::vector<StringLine> StringArtSolver::get_sequence() const
+std::unique_ptr<StringSequence> StringArtSolver::get_sequence()
 {
-    return sequence;
+    return std::move(sequence);
 }
 
-Img StringArtSolver::get_img() const
+std::unique_ptr<Img> StringArtSolver::get_img()
 {
-    return output_img;
+    return std::move(output_img);
 }
 
 const std::vector<Vec2<double>>& StringArtSolver::get_nail_positions()

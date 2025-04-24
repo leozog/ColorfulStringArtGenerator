@@ -1,5 +1,7 @@
 #include "array2d.h"
+#include "color.h"
 #include "img.h"
+#include "img_color_quantizer.h"
 #include "logger.h"
 #include "string_art_solver.h"
 #include "thread_pool.h"
@@ -8,6 +10,9 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <fstream>
+#include <memory>
+#include <string>
 
 void draw_full_circle(Img& img, Vec2<double> center, double radius, Color color)
 {
@@ -49,18 +54,38 @@ int main(int argc, char* argv[])
             throw std::runtime_error("supply target img file name after -S");
         }
 
+        Logger::info("Loading image: {}", pic_filename);
         Img pic{ Img::load(pic_filename) };
 
         ThreadPool tp;
 
+        Logger::info("Creating color palette");
+        ImageColorQuantizer img_color_quantizer{ pic, tp };
+        std::vector<Color> palette{ img_color_quantizer.get_pallete(12, 30, 0.0001) };
+
+        std::string palette_str{ "{ " };
+        for (int i = 0; i < palette.size(); i++) {
+            auto color = palette[i];
+            palette_str += std::format("( {:.0f}, {:.0f}, {:.0f} )", 255 * color.r(), 255 * color.g(), 255 * color.b());
+            if (i != palette.size() - 1) {
+                palette_str += ", ";
+            }
+        }
+        palette_str += " }";
+        Logger::info("Created color palette: {}", palette_str);
+
         StringArtSolver string_art_solver = StringArtSolver::Builder()
                                                 .set_target_img(std::move(pic))
                                                 .set_background_color(Color(1.0, 1.0, 1.0))
-                                                .set_palette({ Color(0.0, 0.0, 0.1),
-                                                               Color(0.8, 0.1, 0.1),
-                                                               Color(0.8, 0.8, 0.1),
-                                                               Color(0.4, 0.0, 0.0),
-                                                               Color(1.0, 1.0, 1.0) })
+                                                // .set_palette({ Color(0.0, 0.0, 0.1),
+                                                //                Color(0.8, 0.1, 0.1),
+                                                //                Color(0.8, 0.8, 0.1),
+                                                //                Color(0.4, 0.0, 0.0),
+                                                //                Color(1.0, 1.0, 1.0) })
+                                                // .set_palette({ Color(0.0, 0.0, 0.0), Color(0.0, 0.0, 0.8), Color(0.8,
+                                                // 0.8, 0.0), Color(1.0, 1.0, 1.0) })
+                                                // .set_palette({ Color(0.0, 0.0, 0.0) })
+                                                .set_palette(std::move(palette))
                                                 .set_img_diameter_cm(20.0)
                                                 .set_nail_count(200)
                                                 .set_nail_diameter_cm(0.1)
@@ -71,8 +96,19 @@ int main(int argc, char* argv[])
 
         Logger::info("Starting string art solver");
         string_art_solver.solve();
-        Img output = string_art_solver.get_img();
 
+        Logger::info("Saving output sequence: {}", "test.txt");
+        std::unique_ptr<StringSequence> seq = string_art_solver.get_sequence();
+        // save sequence as txt file
+        std::ofstream seq_file("test.txt");
+        if (!seq_file) {
+            throw std::runtime_error("Failed to open file for writing sequence");
+        }
+        seq_file << seq->get_str();
+        seq_file.close();
+
+        Logger::info("Saving output image: {}", "test.png");
+        Img output = *string_art_solver.get_img();
         output(output.get_w() / 2, output.get_h() / 2) += Color(0., 1., 0., 1.0);
         // Vec2<double> center{ Vec2<double>(output.get_w(), pic->get_h()) / 2.0 };
         // double radius{ static_cast<double>(output.get_w()) / 2.0 };
@@ -81,9 +117,9 @@ int main(int argc, char* argv[])
         // for (const auto& nail_pos : string_art_solver.get_nail_positions()) {
         //     draw_full_circle(output, nail_pos, nail_radius, Color(0.8, 0.8, 0.9, 0.9));
         // }
-
-        Logger::info("Saving output image: {}", "test.png");
         output.save("test.png");
+
+        Logger::info("Done");
     } catch (const char* err) {
         Logger::error("{}", err);
         return 1;
