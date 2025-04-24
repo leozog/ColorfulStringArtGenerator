@@ -1,8 +1,10 @@
 #include "string_solver.h"
 #include "line.h"
+#include <cstdint>
+#include <limits>
 
-StringSolver::StringSolver(const Array2d<float>& target,
-                           Array2d<float>& current,
+StringSolver::StringSolver(const Array2d<pixel_t>& target,
+                           Array2d<pixel_t>& current,
                            const double string_radius,
                            const StringLine&& string_line)
     : target(target)
@@ -24,8 +26,12 @@ void StringSolver::solve()
     double mse_delta_tmp{ 0.0 };
     line(string_line.get_start_pos(), string_line.get_end_pos(), string_radius, [&](int32_t x, int32_t y, double d) {
         if (target.is_in(x, y)) {
-            mse_delta_tmp += std::pow(std::fmin(1.0, string_function(d) + current(x, y)) - target(x, y), 2) -
-                             std::pow(current(x, y) - target(x, y), 2);
+            mse_delta_tmp +=
+                std::pow(std::min(static_cast<int32_t>(std::numeric_limits<pixel_t>::max()),
+                                  static_cast<int32_t>(string_function(d)) + static_cast<int32_t>(current(x, y))) -
+                             static_cast<int32_t>(target(x, y)),
+                         2) -
+                std::pow(static_cast<int32_t>(current(x, y)) - static_cast<int32_t>(target(x, y)), 2);
         }
     });
     mse_delta = mse_delta_tmp;
@@ -35,14 +41,16 @@ void StringSolver::draw()
 {
     line(string_line.get_start_pos(), string_line.get_end_pos(), string_radius, [&](int32_t x, int32_t y, double d) {
         if (current.is_in(x, y)) {
-            current(x, y) = static_cast<float>(std::fmin(1.0, current(x, y) + string_function(d)));
+            current(x, y) = std::min(static_cast<int32_t>(std::numeric_limits<pixel_t>::max()),
+                                     static_cast<int32_t>(string_function(d)) + static_cast<int32_t>(current(x, y)));
         }
     });
 }
 
-double StringSolver::string_function(double d) const
+StringSolver::pixel_t StringSolver::string_function(double d) const
 {
-    return (1.0 - std::fmin(1.0, d * d / string_radius)) * 0.20;
+    return static_cast<pixel_t>((1.0 - std::fmin(1.0, d * d / string_radius)) * 0.20 *
+                                std::numeric_limits<pixel_t>::max());
 }
 
 StringLine StringSolver::get_string_line() const

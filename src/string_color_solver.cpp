@@ -4,8 +4,10 @@
 #include "string_line.h"
 #include "string_solver.h"
 #include "vec.h"
+#include <cstdint>
 #include <functional>
 #include <iterator>
+#include <limits>
 #include <memory>
 #include <vector>
 
@@ -27,8 +29,11 @@ StringColorSolver::StringColorSolver(const Img& full_img,
 {
     constexpr double max_dist = Vec3<double>{ 1.0, 1.0, 1.0 }.len();
     std::transform(full_img.cbegin(), full_img.cend(), target.begin(), [&color, &background_color](const auto c) {
-        return std::clamp(
-            std::pow(c->dist(background_color) / max_dist, 0.1) - std::pow(c->dist(color) / max_dist, 0.3), 0.0, 1.0);
+        return std::clamp(std::pow(c->dist(background_color) / max_dist, 0.1) -
+                              std::pow(c->dist(color) / max_dist, 0.3),
+                          0.0,
+                          1.0) *
+               std::numeric_limits<StringSolver::pixel_t>::max();
     });
 }
 
@@ -102,7 +107,7 @@ Img& StringColorSolver::get_img() const
     if (!color_img.has_value()) {
         Img color_img_tmp(current.get_w(), current.get_h());
         std::transform(current.cbegin(), current.cend(), color_img_tmp.begin(), [this](const auto v) {
-            return Color(color.r(), color.g(), color.b(), *v);
+            return Color(color.r(), color.g(), color.b(), static_cast<float>(*v) / std::numeric_limits<uint8_t>::max());
         });
         color_img = std::make_optional(std::move(color_img_tmp));
     }
