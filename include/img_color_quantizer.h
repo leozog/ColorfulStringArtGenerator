@@ -11,10 +11,12 @@
 class ImageColorQuantizer
 {
     std::unordered_map<Color, uint32_t> colors;
+    const std::vector<Color> const_centroids;
     ThreadPool& thread_pool;
 
 public:
     ImageColorQuantizer(const Img& img,
+                        const std::vector<Color>& const_centroids,
                         ThreadPool& thread_pool,
                         const std::optional<Array2d<uint8_t>>& mask = std::nullopt);
 

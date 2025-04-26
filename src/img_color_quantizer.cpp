@@ -15,9 +15,11 @@
 #include <vector>
 
 ImageColorQuantizer::ImageColorQuantizer(const Img& img,
+                                         const std::vector<Color>& const_centroids,
                                          ThreadPool& thread_pool,
                                          const std::optional<Array2d<uint8_t>>& mask)
-    : thread_pool{ thread_pool }
+    : const_centroids{ const_centroids }
+    , thread_pool{ thread_pool }
 {
     if (mask) {
         assert(img.get_w() == mask->get_w());
@@ -116,10 +118,19 @@ std::pair<std::vector<Color>, double> ImageColorQuantizer::k_means(size_t k, dou
         new_centroids.assign(k, { { 0, 0, 0, 0 }, 0 });
 
         for (const auto& [color, color_count] : colors) {
+            auto closest_const_centroid = std::min_element(
+                const_centroids.begin(), const_centroids.end(), [&color](const Color& a, const Color& b) {
+                    return color.dist_sq(a) < color.dist_sq(b);
+                });
             auto closest_centroid =
                 std::min_element(centroids.begin(), centroids.end(), [&color](const Color& a, const Color& b) {
                     return color.dist_sq(a) < color.dist_sq(b);
                 });
+            if (closest_const_centroid != const_centroids.end()) {
+                if (color.dist_sq(*closest_const_centroid) < color.dist_sq(*closest_centroid)) {
+                    continue;
+                }
+            }
             auto index = std::distance(centroids.begin(), closest_centroid);
 
             auto& [new_centroid, new_centroid_count] = new_centroids[index];
