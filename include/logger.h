@@ -58,10 +58,10 @@ void Logger::log(const std::format_string<Args...> format, Args&&... args)
 #endif
     std::lock_guard<std::mutex> lock(mtx);
 
-    auto now_time = std::chrono::steady_clock::now();
-    auto elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now_time - start_time).count();
+    const auto now_time{ std::chrono::steady_clock::now() };
+    const auto elapsed_ms{ std::chrono::duration_cast<std::chrono::milliseconds>(now_time - start_time).count() };
 
-    std::string formatted_msg = std::format(format, std::forward<Args>(args)...);
+    const std::string formatted_msg{ std::format(format, std::forward<Args>(args)...) };
     if constexpr (LOG_LEVEL == LogLevel::ERROR) {
         std::println(stderr, log_level_str(LOG_LEVEL), elapsed_ms, formatted_msg);
     } else {

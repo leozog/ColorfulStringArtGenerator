@@ -3,9 +3,7 @@
 
 // ThreadPool
 ThreadPool::ThreadPool(unsigned int n_threads)
-    : tasks([](const std::unique_ptr<AbstractTask>& a, const std::unique_ptr<AbstractTask>& b) {
-        return a->get_priority() < b->get_priority();
-    })
+    : tasks([](const std::unique_ptr<AbstractTask>& a, const std::unique_ptr<AbstractTask>& b) { return *a < *b; })
 {
     n_threads = n_threads == MAX_N_THREADS ? std::thread::hardware_concurrency() : n_threads;
     {

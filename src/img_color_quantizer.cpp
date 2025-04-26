@@ -24,8 +24,8 @@ ImageColorQuantizer::ImageColorQuantizer(const Img& img,
         assert(img.get_h() == mask->get_h());
     }
 
-    uint32_t n_threads = thread_pool.get_n_threads();
-    uint32_t rows_per_task = img.get_h() / n_threads;
+    const uint32_t n_threads{ thread_pool.get_n_threads() };
+    const size_t rows_per_task{ img.get_h() / n_threads };
 
     std::function<std::unordered_map<Color, size_t>(Img::ConstRegion)> f = [&](Img::ConstRegion region) {
         std::unordered_map<Color, size_t> task_colors;

@@ -16,7 +16,7 @@ Color::Color(int r, int g, int b, int a)
 
 Color Color::operator+(const Color& x) const
 {
-    double ao = x.a() + (a() * (1. - x.a()));
+    const double ao = x.a() + (a() * (1. - x.a()));
     return { (x.r() * x.a() + r() * a() * (1 - x.a())) / ao,
              (x.g() * x.a() + g() * a() * (1 - x.a())) / ao,
              (x.b() * x.a() + b() * a() * (1 - x.a())) / ao,
