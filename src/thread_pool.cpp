@@ -5,12 +5,9 @@
 ThreadPool::ThreadPool(unsigned int n_threads)
     : tasks([](const std::unique_ptr<AbstractTask>& a, const std::unique_ptr<AbstractTask>& b) { return *a < *b; })
 {
-    n_threads = n_threads == MAX_N_THREADS ? std::thread::hardware_concurrency() : n_threads;
-    {
-        std::unique_lock<std::mutex> lock(tasks_mutex);
-        for (unsigned int i = 0; i < n_threads; i++) {
-            threads.emplace_back([this](std::stop_token stop_token) { thread_loop(std::move(stop_token)); });
-        }
+    std::unique_lock<std::mutex> lock(tasks_mutex);
+    for (unsigned int i = 0; i < n_threads; i++) {
+        threads.emplace_back([this](std::stop_token stop_token) { thread_loop(std::move(stop_token)); });
     }
 }
 

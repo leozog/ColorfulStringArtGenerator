@@ -47,8 +47,7 @@ private:
     std::vector<std::jthread> threads;
 
 public:
-    constexpr static int MAX_N_THREADS = 0;
-    ThreadPool(unsigned int n_threads = MAX_N_THREADS);
+    ThreadPool(unsigned int n_threads = std::thread::hardware_concurrency());
     ThreadPool(const ThreadPool&) = delete;
     ThreadPool& operator=(const ThreadPool&) = delete;
     ThreadPool(ThreadPool&&) = delete;

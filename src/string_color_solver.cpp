@@ -29,8 +29,8 @@ StringColorSolver::StringColorSolver(const Img& full_img,
 {
     constexpr double max_dist = Vec3<double>{ 1.0, 1.0, 1.0 }.len();
     std::transform(full_img.cbegin(), full_img.cend(), target.begin(), [&color, &background_color](const auto c) {
-        return std::clamp(std::pow(c->dist(background_color) / max_dist, 0.1) -
-                              std::pow(c->dist(color) / max_dist, 0.3),
+        return std::clamp(std::pow(c->dist(background_color) / max_dist, 0.1) *
+                              (1.0 - std::pow(c->dist(color) / max_dist, 0.3)),
                           0.0,
                           1.0) *
                std::numeric_limits<StringSolver::pixel_t>::max();

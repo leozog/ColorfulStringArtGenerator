@@ -1,11 +1,15 @@
 #include "string_art_solver.h"
+#include "annealing_optimizer.h"
+#include "color.h"
 #include "logger.h"
 #include "string_color_solver.h"
 #include "string_sequence.h"
 #include "vec.h"
 
 #include <cstdint>
+#include <functional>
 #include <memory>
+#include <mutex>
 #include <numbers>
 #include <utility>
 #include <vector>
@@ -36,14 +40,29 @@ void StringArtSolver::solve()
 {
     sequence = std::make_unique<StringSequence>();
     output_img = std::make_unique<Img>(target_img.get_w(), target_img.get_h(), background_color);
-    for (const Color& color : palette) {
+    std::mutex mutex;
+
+    ThreadPool solver_thread_pool(4);
+    std::function<void(Color)> f = [this, &mutex](Color color) {
         Logger::info(
             "Solving for color: ( {:.0f}, {:.0f}, {:.0f} )", 255 * color.r(), 255 * color.g(), 255 * color.b());
         StringColorSolver solver{ target_img, background_color, nail_positions, nail_radius, string_radius,
                                   color,      thread_pool };
         solver.solve();
-        sequence->add(color, std::move(solver.get_sequence()));
-        *output_img += solver.get_img();
+        {
+            std::lock_guard<std::mutex> lock(mutex);
+            sequence->add(color, std::move(solver.get_sequence()));
+            *output_img += solver.get_img();
+        }
+    };
+
+    std::vector<std::future<void>> futures;
+    futures.reserve(palette.size());
+    for (const Color& color : palette) {
+        futures.push_back(solver_thread_pool.submit(0, f, color));
+    }
+    for (auto& f : futures) {
+        f.get();
     }
 }
 
