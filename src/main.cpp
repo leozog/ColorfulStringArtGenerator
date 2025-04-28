@@ -61,7 +61,7 @@ int main(int argc, char* argv[])
 
         Logger::info("Creating color palette");
         ImageColorQuantizer img_color_quantizer{ pic, { Color(1.0, 1.0, 1.0) }, tp };
-        std::vector<Color> palette{ img_color_quantizer.get_pallete(64, 30, 0.0001) };
+        std::vector<Color> palette{ img_color_quantizer.get_pallete(32, 32, 0.01) };
 
         std::string palette_str{ "{ " };
         for (int i = 0; i < palette.size(); i++) {

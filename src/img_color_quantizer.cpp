@@ -3,16 +3,8 @@
 #include "color.h"
 #include "logger.h"
 #include "thread_pool.h"
+#include "thread_rng.h"
 #include "vec.h"
-#include <algorithm>
-#include <cassert>
-#include <cstddef>
-#include <cstdint>
-#include <cstdlib>
-#include <functional>
-#include <sys/stat.h>
-#include <unordered_map>
-#include <vector>
 
 ImageColorQuantizer::ImageColorQuantizer(const Img& img,
                                          const std::vector<Color>& const_centroids,
@@ -26,12 +18,12 @@ ImageColorQuantizer::ImageColorQuantizer(const Img& img,
         assert(img.get_h() == mask->get_h());
     }
 
-    const uint32_t n_threads{ thread_pool.get_n_threads() };
-    const size_t rows_per_task{ img.get_h() / n_threads };
+    const uint32_t n_tasks{ thread_pool.get_n_threads() };
+    const size_t rows_per_task{ img.get_h() / n_tasks > 0 ? img.get_h() / n_tasks : 1 };
 
     std::function<std::unordered_map<Color, size_t>(Img::ConstRegion)> f = [&](Img::ConstRegion region) {
         std::unordered_map<Color, size_t> task_colors;
-        task_colors.reserve(rows_per_task * img.get_w() / 2);
+        task_colors.reserve(rows_per_task * img.get_w());
         std::for_each(region.cbegin(), region.cend(), [&](const auto& color) {
             if (!mask || (*mask)(color.get_x(), color.get_y())) {
                 task_colors[*color]++;
@@ -41,7 +33,7 @@ ImageColorQuantizer::ImageColorQuantizer(const Img& img,
     };
 
     std::vector<std::future<std::unordered_map<Color, size_t>>> futures;
-    futures.reserve(n_threads);
+    futures.reserve(n_tasks);
     for (size_t y_start = 0; y_start < img.get_h(); y_start += rows_per_task) {
         size_t y_end = std::min(y_start + rows_per_task, img.get_h());
         futures.push_back(thread_pool.submit(1, f, img.get_cregion(0, y_start, img.get_w(), y_end)));
@@ -149,8 +141,8 @@ std::pair<std::vector<Color>, double> ImageColorQuantizer::k_means(size_t k, dou
                 if (new_centroid_count == 0) {
                     return centroid;
                 }
-                Vec4<float> new_centroid_float{ new_centroid / new_centroid_count };
-                new_centroid_float /= 255.0f;
+                Vec4<float> new_centroid_float{ new_centroid };
+                new_centroid_float /= new_centroid_count * 255.0f;
                 delta += new_centroid_float.dist_sq(centroid);
                 return { new_centroid_float[0], new_centroid_float[1], new_centroid_float[2], new_centroid_float[3] };
             });
@@ -170,5 +162,5 @@ std::pair<std::vector<Color>, double> ImageColorQuantizer::k_means(size_t k, dou
 
 Color ImageColorQuantizer::random_color()
 {
-    return Color{ rand() % 256, rand() % 256, rand() % 256 };
+    return Color{ ThreadRng::uniform_int(0, 255), ThreadRng::uniform_int(0, 255), ThreadRng::uniform_int(0, 255) };
 }
