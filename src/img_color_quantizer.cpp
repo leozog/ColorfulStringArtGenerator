@@ -39,6 +39,7 @@ ImageColorQuantizer::ImageColorQuantizer(const Img& img,
         futures.push_back(thread_pool.submit(1, f, img.get_cregion(0, y_start, img.get_w(), y_end)));
     }
 
+    colors.reserve(img.get_w() * img.get_h());
     for (auto& f : futures) {
         auto task_colors = f.get();
         for (const auto& [color, count] : task_colors) {
