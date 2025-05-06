@@ -34,14 +34,14 @@ ImageColorQuantizer::ImageColorQuantizer(const Img& img,
 
     std::vector<std::future<std::unordered_map<Color, size_t>>> futures;
     futures.reserve(n_tasks);
-    for (size_t y_start = 0; y_start < img.get_h(); y_start += rows_per_task) {
-        size_t y_end = std::min(y_start + rows_per_task, img.get_h());
+    for (size_t y_start{ 0 }; y_start < img.get_h(); y_start += rows_per_task) {
+        size_t y_end{ std::min(y_start + rows_per_task, img.get_h()) };
         futures.push_back(thread_pool.submit(1, f, img.get_cregion(0, y_start, img.get_w(), y_end)));
     }
 
     colors.reserve(img.get_w() * img.get_h());
     for (auto& f : futures) {
-        auto task_colors = f.get();
+        auto task_colors{ f.get() };
         for (const auto& [color, count] : task_colors) {
             colors[color] += count;
         }
@@ -111,20 +111,21 @@ std::pair<std::vector<Color>, double> ImageColorQuantizer::k_means(size_t k, dou
         new_centroids.assign(k, { { 0, 0, 0, 0 }, 0 });
 
         for (const auto& [color, color_count] : colors) {
-            auto closest_const_centroid = std::min_element(
+            const auto closest_const_centroid = std::min_element(
                 const_centroids.begin(), const_centroids.end(), [&color](const Color& a, const Color& b) {
                     return color.dist_sq(a) < color.dist_sq(b);
                 });
-            auto closest_centroid =
+            const auto closest_centroid =
                 std::min_element(centroids.begin(), centroids.end(), [&color](const Color& a, const Color& b) {
                     return color.dist_sq(a) < color.dist_sq(b);
                 });
-            if (closest_const_centroid != const_centroids.end()) {
-                if (color.dist_sq(*closest_const_centroid) < color.dist_sq(*closest_centroid)) {
-                    continue;
-                }
+
+            if (closest_const_centroid != const_centroids.end() &&
+                color.dist_sq(*closest_const_centroid) < color.dist_sq(*closest_centroid)) {
+                continue;
             }
-            auto index = std::distance(centroids.begin(), closest_centroid);
+
+            const auto index = std::distance(centroids.begin(), closest_centroid);
 
             auto& [new_centroid, new_centroid_count] = new_centroids[index];
             new_centroid += static_cast<Vec4<size_t>>(color * 255) * color_count;
@@ -151,11 +152,21 @@ std::pair<std::vector<Color>, double> ImageColorQuantizer::k_means(size_t k, dou
 
     double inertia{ 0.0 };
     for (const auto& [color, color_count] : colors) {
-        auto closest_centroid =
+        const auto closest_const_centroid =
+            std::min_element(const_centroids.begin(), const_centroids.end(), [&color](const Color& a, const Color& b) {
+                return color.dist_sq(a) < color.dist_sq(b);
+            });
+        const auto closest_centroid =
             std::min_element(centroids.begin(), centroids.end(), [&color](const Color& a, const Color& b) {
                 return color.dist_sq(a) < color.dist_sq(b);
             });
-        inertia += color.dist_sq(*closest_centroid) * color_count;
+
+        if (closest_const_centroid != const_centroids.end() &&
+            color.dist_sq(*closest_const_centroid) < color.dist_sq(*closest_centroid)) {
+            inertia += color.dist_sq(*closest_const_centroid) * color_count;
+        } else {
+            inertia += color.dist_sq(*closest_centroid) * color_count;
+        }
     }
 
     return { centroids, inertia };

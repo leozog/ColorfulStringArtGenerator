@@ -18,7 +18,7 @@ std::string StringSequence::get_str() const
     std::string result;
     for (const auto& [color, lines] : sequence) {
         if (!lines->empty()) {
-            result += std::format("C {:.0} {:.0} {:.0}\n", 255 * color.r(), 255 * color.g(), 255 * color.b());
+            result += std::format("C {:.0f} {:.0f} {:.0f}\n", 255 * color.r(), 255 * color.g(), 255 * color.b());
             result += std::format("L {} {}\n",
                                   (*lines)[0].get_start_nail_id(),
                                   (*lines)[0].get_start_wrap() == StringLine::Wrap::CLOKWISE ? "c" : "ac");
