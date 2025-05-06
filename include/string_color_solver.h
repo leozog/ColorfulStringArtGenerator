@@ -20,7 +20,6 @@ private:
     const Color color;
     ThreadPool& thread_pool;
     std::unique_ptr<std::vector<StringLine>> sequence;
-    mutable std::optional<Img> color_img;
 
 public:
     StringColorSolver(const Img& full_img,
@@ -33,5 +32,5 @@ public:
     void solve();
     double solve_step();
     std::unique_ptr<std::vector<StringLine>> get_sequence();
-    Img& get_img() const;
+    std::unique_ptr<Img> get_img() const;
 };

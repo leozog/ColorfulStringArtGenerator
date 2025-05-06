@@ -39,9 +39,18 @@ public:
     [[nodiscard]] std::unique_ptr<Img> get_img();
 
     const std::vector<Vec2<double>>& get_nail_positions();
-    double get_nail_radius_px() const;
+    [[nodiscard]] double get_nail_radius_px() const;
 
 private:
+    struct ColorSolverResult
+    {
+        Color color;
+        std::unique_ptr<std::vector<StringLine>> sequence;
+        std::unique_ptr<Img> img;
+    };
+
+    std::vector<ColorSolverResult> solve_colors();
+    void rearrange_colors(std::vector<ColorSolverResult>& color_solver_results);
     static std::vector<Vec2<double>> make_nail_positions(Vec2<double> center, double radius, uint32_t n);
 };
 

@@ -49,7 +49,7 @@ void StringSolver::draw()
 
 StringSolver::pixel_t StringSolver::string_function(double d) const
 {
-    return static_cast<pixel_t>((1.0 - std::fmin(1.0, d * d / string_radius)) * 0.20 *
+    return static_cast<pixel_t>((1.0 - std::fmin(1.0, d * d / string_radius)) * 0.30 *
                                 std::numeric_limits<pixel_t>::max());
 }
 
